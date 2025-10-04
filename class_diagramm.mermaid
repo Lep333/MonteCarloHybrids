@@ -1,0 +1,23 @@
+classDiagram
+    GameServer: +playGame(ChessVariation game, Player player1, Player player2) int
+
+    class ChessVariation
+    <<interface>> ChessVariation
+    ChessVariation : returnBoard(Player currPlayer) str
+    ChessVariation : verifyMove(Player currPlayer) bool
+    ChessVariation : checkGameOver() int
+
+    ChessVariation <|.. DarkPawnGame
+    ChessVariation <|.. DarkLosAlamosChess
+    ChessVariation <|.. DarkChess
+
+    class Player
+    <<interface>> Player
+    Player : getMove() Tuple~str~
+
+    Player <|.. Greedy
+    Player <|.. POMCP
+    Player <|.. Hybrids
+
+    GameServer ..> ChessVariation
+    GameServer ..> "2" Player
