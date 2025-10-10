@@ -8,6 +8,7 @@ import (
 func playGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Player {
 	move := 0
 	var currPlayer p.Player
+	game.InitGame()
 
 	for !game.GameOver() {
 		currPlayer = setCurrPlayer(move, player1, player2)
