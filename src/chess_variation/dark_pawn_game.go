@@ -55,16 +55,36 @@ func (d *DarkPawnChess) GameOver() bool {
 
 func (d *DarkPawnChess) PossibleMoves(whiteToPlay bool) []Move {
 	moves := []Move{}
-	if whiteToPlay {
-		for i := 0; i < no_fields; i++ {
-			if d.white_pawns&(0b1<<i) > 0 {
-				move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns
-				move := Move{int8(i), int8(math.Log2(float64(move_to_possible)))} //
-				moves = append(moves, move)
-			}
+
+	for i := 0; i < no_fields; i++ {
+		if whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
+			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns
+			move := Move{int8(i), int8(math.Log2(float64(move_to_possible)))} //
+			moves = append(moves, move)
 		}
-	} else {
-		// TODO: black move generation
+
+		if !whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
+			move_to_possible := d.black_pawns_moves[i] & ^d.white_pawns
+			move := Move{int8(i), int8(math.Log2(float64(move_to_possible)))}
+			moves = append(moves, move)
+		}
 	}
 	return moves
+}
+
+func (d *DarkPawnChess) String() string {
+	board := ""
+	for i := no_fields - 1; i >= 0; i-- {
+		if d.white_pawns&(0b1<<i) != 0 {
+			board += "w "
+		} else if d.black_pawns&(0b1<<i) != 0 {
+			board += "b "
+		} else {
+			board += "  "
+		}
+		if i%5 == 0 {
+			board += "\n"
+		}
+	}
+	return board
 }

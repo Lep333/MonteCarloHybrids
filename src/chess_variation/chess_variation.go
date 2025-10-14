@@ -15,4 +15,5 @@ type ChessVariation interface {
 	VerifyMove(currPlayer p.Player) bool
 	PossibleMoves(player int) []Move
 	GameOver() bool
+	String() string
 }
