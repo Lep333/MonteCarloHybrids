@@ -1,22 +1,34 @@
 package server
 
 import (
+	"fmt"
 	c "monte_carlo_hybrids/chess_variation"
 	p "monte_carlo_hybrids/player"
 )
 
-func playGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Player {
+func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Player {
 	move := 0
 	var currPlayer p.Player
 	game.InitGame()
 
 	for !game.GameOver() {
+		fmt.Printf("Move: %v \n", move)
+		fmt.Printf("%v", game)
+		white_to_play := move%2 == 0
 		currPlayer = setCurrPlayer(move, player1, player2)
-		currPlayer.GetMove()
-
+		moves := game.PossibleMoves(white_to_play)
+		fmt.Printf("Possible moves: %v \n", moves)
+		if len(moves) == 0 {
+			fmt.Printf("No possible moves anymore! \n")
+			break
+		}
+		move_to_play := currPlayer.GetMove(moves)
+		fmt.Printf("Selected move: %v \n", move_to_play)
+		game.ExecuteMove(white_to_play, move_to_play)
 		move++
 	}
-
+	fmt.Printf("%v", game)
+	fmt.Printf("Game finished! \n")
 	return currPlayer
 }
 
