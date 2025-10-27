@@ -33,11 +33,11 @@ func TestGameOver(t *testing.T) {
 func TestPossibleMovesInitialBoard(t *testing.T) {
 	game := DarkPawnChess{}
 	game.InitGame()
-	moves := game.PossibleMoves(true)
+	moves := game.PossibleMoves()
 	if len(moves) != 5 {
 		t.Errorf("Returned not 5 moves. There should be 5 possible moves...")
 	}
-	moves = game.PossibleMoves(false)
+	moves = game.PossibleMoves()
 	if len(moves) != 5 {
 		t.Errorf("Returned not 5 moves. There should be 5 possible moves...")
 	}

@@ -5,5 +5,5 @@ import (
 )
 
 type Player interface {
-	GetMove(moves []chess.Move) chess.Move
+	GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 }

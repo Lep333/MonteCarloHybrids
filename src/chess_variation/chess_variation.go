@@ -8,8 +8,8 @@ type Move struct {
 type ChessVariation interface {
 	InitGame()
 	ReturnBoard() ChessVariation
-	PossibleMoves(whiteToPlay bool) []Move
-	ExecuteMove(whiteToPlay bool, move Move)
-	GameOver() bool
+	PossibleMoves() []Move
+	ExecuteMove(move Move) ChessVariation
+	GameOver() (bool, int)
 	String() string
 }

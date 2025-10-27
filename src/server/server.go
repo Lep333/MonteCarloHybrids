@@ -11,20 +11,25 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Playe
 	var currPlayer p.Player
 	game.InitGame()
 
-	for !game.GameOver() {
+	for {
+		game_over, _ := game.GameOver()
+		if game_over {
+			break
+		}
 		fmt.Printf("Move: %v \n", move)
 		fmt.Printf("%v", game)
 		white_to_play := move%2 == 0
 		currPlayer = setCurrPlayer(move, player1, player2)
-		moves := game.PossibleMoves(white_to_play)
+		moves := game.PossibleMoves()
 		fmt.Printf("Possible moves: %v \n", moves)
 		if len(moves) == 0 {
 			fmt.Printf("No possible moves anymore! \n")
 			break
 		}
-		move_to_play := currPlayer.GetMove(moves)
+		board := game.ReturnBoard()
+		move_to_play := currPlayer.GetMove(board, white_to_play)
 		fmt.Printf("Selected move: %v \n", move_to_play)
-		game.ExecuteMove(white_to_play, move_to_play)
+		game = game.ExecuteMove(move_to_play)
 		move++
 	}
 	fmt.Printf("%v", game)

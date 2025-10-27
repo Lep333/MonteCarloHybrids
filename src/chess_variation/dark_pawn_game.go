@@ -16,9 +16,11 @@ type DarkPawnChess struct {
 	black_pawns         uint
 	black_pawns_moves   [no_fields]uint
 	black_pawns_capture [no_fields]uint
+	whiteToPlay         bool
 }
 
 func (d *DarkPawnChess) InitGame() {
+	d.whiteToPlay = true
 	d.white_pawns = row_bitmask
 	d.black_pawns = row_bitmask << black_base_line_start
 
@@ -50,27 +52,35 @@ func (d *DarkPawnChess) ReturnBoard() ChessVariation {
 	return d
 }
 
-func (d *DarkPawnChess) GameOver() bool {
+func (d *DarkPawnChess) GameOver() (bool, int) {
 	game_over := false
+	winner := 0 // 1 white; -1 black; 0 draw
 
 	// check for opposing pawns on base line
 	for i := uint(0); i < row_length; i++ {
 		if d.black_pawns&row_bitmask > 0 {
 			game_over = true
+			winner = -1
 		}
 
 		if d.white_pawns&(row_bitmask<<black_base_line_start) > 0 {
 			game_over = true
+			winner = 1
 		}
 	}
-	return game_over
+
+	if len(d.PossibleMoves()) == 0 {
+		game_over = true
+	}
+
+	return game_over, winner
 }
 
-func (d *DarkPawnChess) PossibleMoves(whiteToPlay bool) []Move {
+func (d *DarkPawnChess) PossibleMoves() []Move {
 	moves := []Move{}
 
 	for i := uint(0); i < no_fields; i++ {
-		if whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
+		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible)))}
@@ -86,7 +96,7 @@ func (d *DarkPawnChess) PossibleMoves(whiteToPlay bool) []Move {
 			}
 		}
 
-		if !whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
+		if !d.whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.black_pawns_moves[i] & ^d.white_pawns
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible)))}
@@ -105,17 +115,20 @@ func (d *DarkPawnChess) PossibleMoves(whiteToPlay bool) []Move {
 	return moves
 }
 
-func (d *DarkPawnChess) ExecuteMove(whiteToPlay bool, move Move) {
+func (d *DarkPawnChess) ExecuteMove(move Move) ChessVariation {
+	copy := *d
 	var mask_from uint = 1 << move.from
 	var mask_to uint = 1 << move.to
 	var mask uint = mask_from | mask_to
-	if whiteToPlay {
-		d.white_pawns ^= mask
-		d.black_pawns = d.black_pawns &^ mask_to
+	if d.whiteToPlay {
+		copy.white_pawns ^= mask
+		copy.black_pawns = d.black_pawns &^ mask_to
 	} else {
-		d.black_pawns ^= mask
-		d.white_pawns = d.white_pawns &^ mask_to
+		copy.black_pawns ^= mask
+		copy.white_pawns = d.white_pawns &^ mask_to
 	}
+	copy.whiteToPlay = !d.whiteToPlay
+	return &copy
 }
 
 func (d *DarkPawnChess) String() string {
