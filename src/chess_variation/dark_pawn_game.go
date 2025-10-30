@@ -2,9 +2,10 @@ package chess_variation
 
 import (
 	"math"
+	"slices"
 )
 
-const row_length uint = 8
+const row_length uint = 5
 const no_fields uint = row_length * row_length
 const black_base_line_start uint = row_length * (row_length - 1)
 const row_bitmask uint = (1 << row_length) - 1
@@ -28,10 +29,10 @@ func (d *DarkPawnChess) InitGame() {
 		if i < no_fields-row_length {
 			d.white_pawns_moves[i] = 0b1 << (i + row_length)
 			if i-row_length+1%row_length != 0 {
-				d.white_pawns_capture[i] = 0b1 << (i + row_length + 1) // left capture
+				d.white_pawns_capture[i] += 0b1 << (i + row_length + 1) // left capture
 			}
 			if i%row_length != 0 {
-				d.white_pawns_capture[i] = 0b1 << (i + row_length - 1) // right capture
+				d.white_pawns_capture[i] += 0b1 << (i + row_length - 1) // right capture
 			}
 		}
 
@@ -39,10 +40,10 @@ func (d *DarkPawnChess) InitGame() {
 			d.black_pawns_moves[i] = 0b1 << (i - row_length)
 
 			if i-row_length+1%row_length != 0 {
-				d.black_pawns_capture[i] = 0b1 << (i - row_length + 1) // left capture
+				d.black_pawns_capture[i] += 0b1 << (i - row_length + 1) // left capture
 			}
 			if i%row_length != 0 {
-				d.black_pawns_capture[i] = 0b1 << (i - row_length - 1) // right capture
+				d.black_pawns_capture[i] += 0b1 << (i - row_length - 1) // right capture
 			}
 		}
 	}
@@ -128,6 +129,30 @@ func (d *DarkPawnChess) ExecuteMove(move Move) ChessVariation {
 		copy.white_pawns = d.white_pawns &^ mask_to
 	}
 	copy.whiteToPlay = !d.whiteToPlay
+	return &copy
+}
+
+func (d *DarkPawnChess) CreateView() ChessVariation {
+	copy := *d
+	poss_moves := copy.PossibleMoves()
+	moves_to := []int{}
+	for _, move := range poss_moves {
+		if !slices.Contains(moves_to, int(move.to)) {
+			moves_to = append(moves_to, int(move.to))
+		}
+	}
+
+	if copy.whiteToPlay {
+		copy.black_pawns = 0
+		for _, move_to := range moves_to {
+			copy.black_pawns += d.black_pawns & (1 << move_to)
+		}
+	} else {
+		copy.white_pawns = 0
+		for _, move_to := range moves_to {
+			copy.white_pawns += d.white_pawns & (1 << move_to)
+		}
+	}
 	return &copy
 }
 

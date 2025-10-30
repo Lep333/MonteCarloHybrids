@@ -58,9 +58,9 @@ func expansion(curr_node *MonteCarloTreeNode) {
 	poss_moves := curr_node.board.PossibleMoves()
 	for _, move := range poss_moves {
 		new_board := curr_node.board.ExecuteMove(move)
+		new_board.CreateView()
 		new_node := MonteCarloTreeNode{curr_node, nil, 0, 0, move, new_board}
 		curr_node.children = append(curr_node.children, &new_node)
-		// ??? curr_node
 	}
 }
 

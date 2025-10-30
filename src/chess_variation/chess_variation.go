@@ -10,6 +10,7 @@ type ChessVariation interface {
 	ReturnBoard() ChessVariation
 	PossibleMoves() []Move
 	ExecuteMove(move Move) ChessVariation
+	CreateView() ChessVariation
 	GameOver() (bool, int)
 	String() string
 }
