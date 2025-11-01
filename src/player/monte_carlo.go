@@ -8,7 +8,9 @@ import (
 	"time"
 )
 
-type MonteCarlo struct{}
+type MonteCarlo struct {
+	particle_filter []chess.ChessVariation
+}
 
 type MonteCarloTreeNode struct {
 	parent   *MonteCarloTreeNode
@@ -20,8 +22,33 @@ type MonteCarloTreeNode struct {
 }
 
 func (m *MonteCarlo) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
+	// TODO: settings
 	time_length_in_ms := 500
+	// particle_filter_size := 500
+
 	start := time.Now()
+	// TODO: Move_Number == 0 dont do anything
+	if m.particle_filter == nil {
+		m.particle_filter = append(m.particle_filter, board)
+	}
+	var new_particle_filter []chess.ChessVariation
+	for _, state := range m.particle_filter {
+		// TODO: pick state and move randomly
+		// also limit filter size
+		curr_view := state.CreateView()
+		poss_moves := state.GetPreviousBoard().PossibleMoves()
+		// TODO: check if result fits with knowledge
+		for _, poss_move := range poss_moves {
+			new_board := state.GetPreviousBoard().ExecuteMove(poss_move)
+			view := new_board.CreateView()
+			if view.String() == curr_view.String() {
+				new_particle_filter = append(new_particle_filter, new_board)
+			}
+		}
+	}
+	m.particle_filter = new_particle_filter
+
+	// pomcp
 	root := MonteCarloTreeNode{nil, nil, 0, 0, chess.Move{}, board}
 	moves := board.PossibleMoves()
 	for _, move := range moves {
@@ -31,11 +58,17 @@ func (m *MonteCarlo) GetMove(board chess.ChessVariation, whiteToPlay bool) chess
 	}
 
 	for int(time.Now().Sub(start).Milliseconds()) < time_length_in_ms {
+		state := m.particle_filter[rand.Intn(len(m.particle_filter)-1)]
+		for _, child := range root.children {
+			child.board = state.ExecuteMove(child.move)
+		}
+
 		curr_node := selection(&root)
 		expansion(curr_node)
 		curr_board := rollout(curr_node)
 		backpropagation(curr_node, curr_board, whiteToPlay)
 	}
+
 	slices.SortFunc(root.children, func(a, b *MonteCarloTreeNode) int {
 		return int(b.wins - a.wins)
 	})

@@ -57,6 +57,28 @@ func TestPossibleMoves(t *testing.T) {
 	}
 }
 
+func TestPossibleMovesLeftCapture(t *testing.T) {
+	game := DarkPawnChess{}
+	game.InitGame()
+	game.black_pawns = 0b11111 << 20
+	game.white_pawns = 0b1 << 14
+	moves := game.PossibleMoves()
+	if len(moves) != 1 {
+		t.Errorf("Returned %v moves. There should be 1 possible move...", len(moves))
+	}
+}
+
+func TestPossibleMovesRightCapture(t *testing.T) {
+	game := DarkPawnChess{}
+	game.InitGame()
+	game.black_pawns = 0b11111 << 20
+	game.white_pawns = 0b1 << 10
+	moves := game.PossibleMoves()
+	if len(moves) != 1 {
+		t.Errorf("Returned %v moves. There should be 1 possible move...", len(moves))
+	}
+}
+
 func TestCreateView(t *testing.T) {
 	game := DarkPawnChess{}
 	game.InitGame()

@@ -8,6 +8,7 @@ type Move struct {
 type ChessVariation interface {
 	InitGame()
 	ReturnBoard() ChessVariation
+	GetPreviousBoard() ChessVariation
 	PossibleMoves() []Move
 	ExecuteMove(move Move) ChessVariation
 	CreateView() ChessVariation

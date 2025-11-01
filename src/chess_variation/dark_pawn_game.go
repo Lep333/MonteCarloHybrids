@@ -18,6 +18,7 @@ type DarkPawnChess struct {
 	black_pawns_moves   [no_fields]uint
 	black_pawns_capture [no_fields]uint
 	whiteToPlay         bool
+	prev_board          *DarkPawnChess
 }
 
 func (d *DarkPawnChess) InitGame() {
@@ -28,7 +29,7 @@ func (d *DarkPawnChess) InitGame() {
 	for i := uint(0); i < no_fields; i++ {
 		if i < no_fields-row_length {
 			d.white_pawns_moves[i] = 0b1 << (i + row_length)
-			if i-row_length+1%row_length != 0 {
+			if i%row_length != row_length-1 {
 				d.white_pawns_capture[i] += 0b1 << (i + row_length + 1) // left capture
 			}
 			if i%row_length != 0 {
@@ -39,7 +40,7 @@ func (d *DarkPawnChess) InitGame() {
 		if i >= row_length {
 			d.black_pawns_moves[i] = 0b1 << (i - row_length)
 
-			if i-row_length+1%row_length != 0 {
+			if i%row_length != row_length-1 {
 				d.black_pawns_capture[i] += 0b1 << (i - row_length + 1) // left capture
 			}
 			if i%row_length != 0 {
@@ -51,6 +52,10 @@ func (d *DarkPawnChess) InitGame() {
 
 func (d *DarkPawnChess) ReturnBoard() ChessVariation {
 	return d
+}
+
+func (d *DarkPawnChess) GetPreviousBoard() ChessVariation {
+	return d.prev_board
 }
 
 func (d *DarkPawnChess) GameOver() (bool, int) {
@@ -129,6 +134,7 @@ func (d *DarkPawnChess) ExecuteMove(move Move) ChessVariation {
 		copy.white_pawns = d.white_pawns &^ mask_to
 	}
 	copy.whiteToPlay = !d.whiteToPlay
+	copy.prev_board = d
 	return &copy
 }
 
