@@ -5,7 +5,7 @@ import (
 	"slices"
 )
 
-const row_length uint = 5
+const row_length uint = 6
 const no_fields uint = row_length * row_length
 const black_base_line_start uint = row_length * (row_length - 1)
 const row_bitmask uint = (1 << row_length) - 1
@@ -18,11 +18,13 @@ type DarkPawnChess struct {
 	black_pawns_moves   [no_fields]uint
 	black_pawns_capture [no_fields]uint
 	whiteToPlay         bool
+	number_of_moves     int
 	prev_board          *DarkPawnChess
 }
 
 func (d *DarkPawnChess) InitGame() {
 	d.whiteToPlay = true
+	d.number_of_moves = 0
 	d.white_pawns = row_bitmask
 	d.black_pawns = row_bitmask << black_base_line_start
 
@@ -58,6 +60,10 @@ func (d *DarkPawnChess) GetPreviousBoard() ChessVariation {
 	return d.prev_board
 }
 
+func (d *DarkPawnChess) GetNumberOfMoves() int {
+	return d.number_of_moves
+}
+
 func (d *DarkPawnChess) GameOver() (bool, int) {
 	game_over := false
 	winner := 0 // 1 white; -1 black; 0 draw
@@ -89,14 +95,14 @@ func (d *DarkPawnChess) PossibleMoves() []Move {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(math.Log2(float64(move_to_possible)))}
+				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
 				moves = append(moves, move)
 			}
 
 			capture_possible := d.white_pawns_capture[i] & d.black_pawns
 			for position := uint(0); position < no_fields; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position)}
+					move := Move{int8(i), int8(position), true}
 					moves = append(moves, move)
 				}
 			}
@@ -105,14 +111,14 @@ func (d *DarkPawnChess) PossibleMoves() []Move {
 		if !d.whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.black_pawns_moves[i] & ^d.white_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(math.Log2(float64(move_to_possible)))}
+				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
 				moves = append(moves, move)
 			}
 
 			capture_possible := d.black_pawns_capture[i] & d.white_pawns
 			for position := uint(0); position < no_fields; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position)}
+					move := Move{int8(i), int8(position), true}
 					moves = append(moves, move)
 				}
 			}
@@ -135,6 +141,7 @@ func (d *DarkPawnChess) ExecuteMove(move Move) ChessVariation {
 	}
 	copy.whiteToPlay = !d.whiteToPlay
 	copy.prev_board = d
+	copy.number_of_moves = d.number_of_moves + 1
 	return &copy
 }
 

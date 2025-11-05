@@ -31,6 +31,13 @@ func TestGameOver(t *testing.T) {
 	if !game_over {
 		t.Errorf("Black should have won.")
 	}
+
+	game.white_pawns = 0b0
+	game.black_pawns = 0b1
+	game_over, winner := game.GameOver()
+	if !game_over && winner == 0 {
+		t.Errorf("Should be a draw.")
+	}
 }
 
 func TestPossibleMovesInitialBoard(t *testing.T) {
