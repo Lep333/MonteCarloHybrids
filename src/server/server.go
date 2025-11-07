@@ -29,6 +29,7 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Playe
 		board := game.ReturnBoard()
 		move_to_play := currPlayer.GetMove(board, white_to_play)
 		fmt.Printf("Selected move: %v \n", move_to_play)
+		// TODO: check if move legal!
 		game = game.ExecuteMove(move_to_play)
 		move++
 	}

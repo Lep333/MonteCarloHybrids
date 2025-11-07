@@ -64,9 +64,10 @@ func (d *DarkPawnChess) GetNumberOfMoves() int {
 	return d.number_of_moves
 }
 
+// 1 white; -1 black; 0 draw
 func (d *DarkPawnChess) GameOver() (bool, int) {
 	game_over := false
-	winner := 0 // 1 white; -1 black; 0 draw
+	winner := 0
 
 	// check for opposing pawns on base line
 	for i := uint(0); i < row_length; i++ {
@@ -90,6 +91,11 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 
 func (d *DarkPawnChess) PossibleMoves() []Move {
 	moves := []Move{}
+
+	game_over, _ := d.GameOver()
+	if game_over {
+		return moves
+	}
 
 	for i := uint(0); i < no_fields; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
