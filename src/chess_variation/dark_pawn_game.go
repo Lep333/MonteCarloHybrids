@@ -5,7 +5,7 @@ import (
 	"slices"
 )
 
-const row_length uint = 6
+const row_length uint = 5
 const no_fields uint = row_length * row_length
 const black_base_line_start uint = row_length * (row_length - 1)
 const row_bitmask uint = (1 << row_length) - 1
@@ -19,7 +19,6 @@ type DarkPawnChess struct {
 	black_pawns_capture [no_fields]uint
 	whiteToPlay         bool
 	number_of_moves     int
-	prev_board          *DarkPawnChess
 }
 
 func (d *DarkPawnChess) InitGame() {
@@ -53,11 +52,12 @@ func (d *DarkPawnChess) InitGame() {
 }
 
 func (d *DarkPawnChess) ReturnBoard() ChessVariation {
-	return d
+	copy := *d
+	return &copy
 }
 
 func (d *DarkPawnChess) GetPreviousBoard() ChessVariation {
-	return d.prev_board
+	return d.ReturnBoard()
 }
 
 func (d *DarkPawnChess) GetNumberOfMoves() int {
@@ -82,7 +82,7 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 		}
 	}
 
-	if len(d.PossibleMoves()) == 0 {
+	if len(d.get_moves()) == 0 {
 		game_over = true
 	}
 
@@ -96,6 +96,12 @@ func (d *DarkPawnChess) PossibleMoves() []Move {
 	if game_over {
 		return moves
 	}
+
+	return d.get_moves()
+}
+
+func (d *DarkPawnChess) get_moves() []Move {
+	moves := []Move{}
 
 	for i := uint(0); i < no_fields; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
@@ -135,8 +141,8 @@ func (d *DarkPawnChess) PossibleMoves() []Move {
 
 func (d *DarkPawnChess) ExecuteMove(move Move) ChessVariation {
 	copy := *d
-	var mask_from uint = 1 << move.from
-	var mask_to uint = 1 << move.to
+	var mask_from uint = 1 << move.From
+	var mask_to uint = 1 << move.To
 	var mask uint = mask_from | mask_to
 	if d.whiteToPlay {
 		copy.white_pawns ^= mask
@@ -146,7 +152,7 @@ func (d *DarkPawnChess) ExecuteMove(move Move) ChessVariation {
 		copy.white_pawns = d.white_pawns &^ mask_to
 	}
 	copy.whiteToPlay = !d.whiteToPlay
-	copy.prev_board = d
+	// TODO: remove copy.prev_board = d
 	copy.number_of_moves = d.number_of_moves + 1
 	return &copy
 }
@@ -156,8 +162,8 @@ func (d *DarkPawnChess) CreateView() ChessVariation {
 	poss_moves := copy.PossibleMoves()
 	moves_to := []int{}
 	for _, move := range poss_moves {
-		if !slices.Contains(moves_to, int(move.to)) {
-			moves_to = append(moves_to, int(move.to))
+		if !slices.Contains(moves_to, int(move.To)) {
+			moves_to = append(moves_to, int(move.To))
 		}
 	}
 

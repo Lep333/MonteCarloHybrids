@@ -1,8 +1,8 @@
 package chess_variation
 
 type Move struct {
-	from    int8
-	to      int8
+	From    int8
+	To      int8
 	Capture bool
 }
 

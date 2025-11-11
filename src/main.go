@@ -9,6 +9,6 @@ import (
 func main() {
 	dark_pawn_chess := chess_variation.DarkPawnChess{}
 	player1 := player.RandomPlayer{}
-	player2 := player.MonteCarlo{}
+	player2 := player.POMCP{}
 	server.PlayGame(&dark_pawn_chess, &player1, &player2)
 }
