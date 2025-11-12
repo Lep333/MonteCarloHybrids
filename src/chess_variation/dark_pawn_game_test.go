@@ -38,6 +38,15 @@ func TestGameOver(t *testing.T) {
 	if !game_over && winner == 0 {
 		t.Errorf("Should be a draw.")
 	}
+
+	game.white_pawns = 0b01001
+	game.black_pawns = 0b1 << 5
+	game.number_of_moves = 1
+	game.whiteToPlay = false
+	game_over, winner = game.GameOver()
+	if !game_over || winner != 1 {
+		t.Errorf("Should be a win for white.")
+	}
 }
 
 func TestPossibleMovesInitialBoard(t *testing.T) {
@@ -102,8 +111,23 @@ func TestCreateView(t *testing.T) {
 			t.Errorf("There should be 5 black pawns visible!")
 		}
 		fmt.Printf("%v", dpc)
-	}
+		dpc.white_pawns = 0b00100
+		dpc.black_pawns = 0b00100 << 5
+		view = dpc.CreateView()
+		dpc, _ = view.(*DarkPawnChess)
+		if dpc.black_pawns != 0b00100<<5 {
+			t.Errorf("There should be one black pawn visible!")
+		}
 
+		dpc.white_pawns = 0b100010111
+		dpc.black_pawns = 0b11110 << 20
+		dpc.black_pawns += 0b1 << 15
+		view = dpc.CreateView()
+		dpc, _ = view.(*DarkPawnChess)
+		if dpc.black_pawns != 0 {
+			t.Errorf("There should be no black pawn visible!")
+		}
+	}
 }
 
 func TestString(t *testing.T) {

@@ -30,6 +30,17 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Playe
 		move_to_play := currPlayer.GetMove(board, white_to_play)
 		fmt.Printf("Selected move: %v \n", move_to_play)
 		// TODO: check if move legal!
+		legal_move := false
+		for _, move := range moves {
+			if move == move_to_play {
+				legal_move = true
+				break
+			}
+		}
+		if !legal_move {
+			println("---ILLEGAL MOVE---")
+			return nil
+		}
 		game = game.ExecuteMove(move_to_play)
 		move++
 	}
