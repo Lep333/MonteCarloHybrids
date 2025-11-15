@@ -124,7 +124,7 @@ func (d *DarkPawnChess) get_moves() []Move {
 
 	for i := uint(0); i < no_fields; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
-			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns
+			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns & ^d.white_pawns
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
 				moves = append(moves, move)
@@ -140,7 +140,7 @@ func (d *DarkPawnChess) get_moves() []Move {
 		}
 
 		if !d.whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
-			move_to_possible := d.black_pawns_moves[i] & ^d.white_pawns
+			move_to_possible := d.black_pawns_moves[i] & ^d.white_pawns & ^d.black_pawns
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
 				moves = append(moves, move)
@@ -254,4 +254,11 @@ func (d *DarkPawnChess) String() string {
 		}
 	}
 	return board
+}
+
+func (d *DarkPawnChess) Set_Board(white_pawns uint, black_pawns uint, number_of_moves int, whiteToplay bool) {
+	d.white_pawns = white_pawns
+	d.black_pawns = black_pawns
+	d.number_of_moves = number_of_moves
+	d.whiteToPlay = true
 }

@@ -2,18 +2,21 @@ package server
 
 import (
 	"fmt"
+	"monte_carlo_hybrids/chess_variation"
 	c "monte_carlo_hybrids/chess_variation"
 	p "monte_carlo_hybrids/player"
 )
 
-func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Player {
+func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (int, []chess_variation.Move) {
 	move := 0
 	var currPlayer p.Player
 	game.InitGame()
-
+	var move_history []chess_variation.Move
+	var result int
 	for {
-		game_over, _ := game.GameOver()
+		game_over, tmp_result := game.GameOver()
 		if game_over {
+			result = tmp_result
 			break
 		}
 		fmt.Printf("Move: %v \n", move)
@@ -28,8 +31,9 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Playe
 		}
 		board := game.CreateView()
 		move_to_play := currPlayer.GetMove(board, white_to_play)
+		move_history = append(move_history, move_to_play)
 		fmt.Printf("Selected move: %v \n", move_to_play)
-		// TODO: check if move legal!
+		// check if move legal!
 		legal_move := false
 		for _, move := range moves {
 			if move == move_to_play {
@@ -38,15 +42,14 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) p.Playe
 			}
 		}
 		if !legal_move {
-			println("---ILLEGAL MOVE---")
-			return nil
+			panic("---ILLEGAL MOVE---")
 		}
 		game = game.ExecuteMove(move_to_play)
 		move++
 	}
 	fmt.Printf("%v", game)
 	fmt.Printf("Game finished! \n")
-	return currPlayer
+	return result, move_history
 }
 
 func setCurrPlayer(move int, player1 p.Player, player2 p.Player) p.Player {
