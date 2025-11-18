@@ -10,17 +10,31 @@ import (
 
 func main() {
 	dark_pawn_chess := chess_variation.DarkPawnChess{}
-	player1 := player.RandomPlayer{}
-	settings := player.Settings{Termination_parameter: 1000, Gamma: 0.95, Epsilon: 0.005, Ucb_c: 1, Capture_reward: 0.2}
-	player2 := player.POMCP{Root: nil, Started_playing: false, Last_move: chess_variation.Move{}, Settings: settings}
+	var player1, player2 player.Player
+	player1 = &player.RandomPlayer{}
+	settings := player.Settings{
+		Termination_parameter: 3000,
+		Gamma:                 0.95,
+		Epsilon:               0.005,
+		Ucb_c:                 2,
+		Capture_reward:        0.8,
+		Rollout_capture:       0.7,
+	}
+	player2 = &player.POMCP{Root: nil, Started_playing: false, Last_move: chess_variation.Move{}, Settings: settings}
 	greedy_wins := 0
 	pomcp_wins := 0
-	c_values := []int{5, 10, 15, 20}
+	c_values := []int{5}
 	for _, c := range c_values {
 		settings.Ucb_c = float64(c)
-		for i := 0; i < 100; i++ {
-			winner, moves := server.PlayGame(&dark_pawn_chess, &player1, &player2)
-			if winner == 1 && player1.String() == "POMCP" || winner == -1 && player1.String() == "POMCP" {
+		iterations := 100
+		for i := 0; i < iterations; i++ {
+			if i == int(iterations/2) {
+				temp := player1
+				player1 = player2
+				player2 = temp
+			}
+			winner, moves := server.PlayGame(&dark_pawn_chess, player1, player2)
+			if winner == 1 && player1.String() == "POMCP" || winner == -1 && player2.String() == "POMCP" {
 				pomcp_wins++
 			} else if winner != 0 {
 				greedy_wins++
@@ -39,11 +53,12 @@ func main() {
 				moves,
 				settings.Capture_reward,
 			)
-			save_results(result_string)
+			// save_results(result_string)
+			print(result_string)
 		}
 	}
-	println("Greedy wins: ", greedy_wins)
-	println("POMCP wins: ", pomcp_wins)
+	fmt.Printf("%v wins: %v \n", player1.String(), pomcp_wins)
+	fmt.Printf("%v wins: %v \n", player2.String(), greedy_wins)
 }
 
 func save_results(result string) {

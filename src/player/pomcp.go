@@ -25,6 +25,7 @@ type Settings struct {
 	Epsilon               float64
 	Ucb_c                 float64
 	Capture_reward        float64
+	Rollout_capture       float64
 }
 
 type Node struct {
@@ -45,7 +46,7 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	p.Init_pomcp(board, whiteToPlay)
 	prune_tree_and_update_beliefs(p, board)
 	selected_move := p.search(p.Root)
-	println("visits: ", p.Root.visits)
+	// println("visits: ", p.Root.visits)
 	p.Last_move = selected_move
 	return selected_move
 }
@@ -81,7 +82,7 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 		if new_root == nil {
 			consistent_beliefs := map[string]chess.ChessVariation{}
 			for key, belief := range p.Root.beliefs {
-				new_s := state_transition(belief, p.Root)
+				new_s := p.state_transition(belief, p.Root)
 				if new_s.CreateView().String() == board.String() {
 					consistent_beliefs[key] = belief
 				}
@@ -106,7 +107,7 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 
 func (p *POMCP) search(h *Node) chess.Move {
 	start_time := time.Now()
-	//for i := 0; i < 10000; i++ {
+	// for i := 0; i < 100000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
 		s := random_belief(h.beliefs)
 		p.simulate(s, h, 0)
@@ -125,17 +126,10 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 	}
 	a := p.get_most_promising_action_by_ucb(h)
 	o := s.ExecuteMove(a)
-	short_term_reward := 0.0
 	possible_moves := o.PossibleMoves()
 	if len(possible_moves) > 0 {
 		opponent_move := random_element(possible_moves)
 		o = o.ExecuteMove(opponent_move)
-		if a.Capture {
-			short_term_reward += p.Settings.Capture_reward
-		}
-		if opponent_move.Capture {
-			short_term_reward -= p.Settings.Capture_reward
-		}
 	}
 	ha := h.children[Combined_Key{a, o.CreateView().String()}] // s needs to be an observation?
 	if ha == nil {
@@ -143,7 +137,7 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 		h.children[Combined_Key{a, o.CreateView().String()}] = &Node{h, nil, 0, 0, a, o, map[string]chess.ChessVariation{}}
 		ha = h.children[Combined_Key{a, o.CreateView().String()}]
 	}
-	reward := short_term_reward + p.simulate(o, ha, depth+1)
+	reward := o.Heuristic() + p.Settings.Gamma*p.simulate(o, ha, depth+1)
 	h.beliefs[s.String()] = s
 	h.visits++
 	ha.visits++
@@ -155,7 +149,7 @@ func (p *POMCP) rollout(s chess.ChessVariation, h *Node, depth int) float64 {
 	if math.Pow(p.Settings.Gamma, float64(depth)) < p.Settings.Epsilon {
 		return 0
 	}
-	new_s := state_transition(s, h)
+	new_s := p.state_transition(s, h)
 	game_over, result := new_s.GameOver()
 	if game_over {
 		if !p.Started_playing {
@@ -167,7 +161,7 @@ func (p *POMCP) rollout(s chess.ChessVariation, h *Node, depth int) float64 {
 		}
 		return float64(result) // 1 for win -1 for lose
 	}
-	return p.Settings.Gamma * p.rollout(new_s, h, depth+1)
+	return new_s.Heuristic() + p.Settings.Gamma*p.rollout(new_s, h, depth+1)
 }
 
 func random_element[T any](collection []T) T {
@@ -227,24 +221,26 @@ func get_best_move(h *Node) chess.Move {
 func create_all_children(s chess.ChessVariation, h *Node) map[Combined_Key]*Node {
 	possible_transitions := make(map[Combined_Key]*Node)
 	// differentiate between own action and opponent action in data type
-	for _, own_move := range s.PossibleMoves() {
-		new_s := s.ExecuteMove(own_move)
-		game_over, _ := new_s.GameOver()
-		if game_over {
-			belief := map[string]chess.ChessVariation{}
-			belief[new_s.String()] = new_s
-			new_child := &Node{h, nil, 0, 0, own_move, new_s, belief}
-			possible_transitions[Combined_Key{own_move, new_s.CreateView().String()}] = new_child
-		}
-		for _, opponent_move := range new_s.PossibleMoves() {
-			o := new_s.ExecuteMove(opponent_move)
-			if val, ok := possible_transitions[Combined_Key{own_move, o.CreateView().String()}]; ok {
-				val.beliefs[o.String()] = o
-			} else {
+	for _, belief := range h.beliefs {
+		for _, own_move := range belief.PossibleMoves() {
+			new_s := belief.ExecuteMove(own_move)
+			game_over, _ := new_s.GameOver()
+			if game_over {
 				belief := map[string]chess.ChessVariation{}
-				belief[o.String()] = o
-				new_child := &Node{h, nil, 0, 0, own_move, o, belief}
-				possible_transitions[Combined_Key{own_move, o.CreateView().String()}] = new_child
+				belief[new_s.String()] = new_s
+				new_child := &Node{h, nil, 0, 0, own_move, new_s, belief}
+				possible_transitions[Combined_Key{own_move, new_s.CreateView().String()}] = new_child
+			}
+			for _, opponent_move := range new_s.PossibleMoves() {
+				o := new_s.ExecuteMove(opponent_move)
+				if val, ok := possible_transitions[Combined_Key{own_move, o.CreateView().String()}]; ok {
+					val.beliefs[o.String()] = o
+				} else {
+					belief := map[string]chess.ChessVariation{}
+					belief[o.String()] = o
+					new_child := &Node{h, nil, 0, 0, own_move, o, belief}
+					possible_transitions[Combined_Key{own_move, o.CreateView().String()}] = new_child
+				}
 			}
 		}
 	}
@@ -253,20 +249,36 @@ func create_all_children(s chess.ChessVariation, h *Node) map[Combined_Key]*Node
 }
 
 // simulates random own move and opponents
-func state_transition(s chess.ChessVariation, h *Node) chess.ChessVariation {
+func (p *POMCP) state_transition(s chess.ChessVariation, h *Node) chess.ChessVariation {
 	possible_moves := s.PossibleMoves()
 	if len(possible_moves) == 0 {
 		return s
 	}
-	selected_move := random_element(possible_moves)
+	selected_move := p.rollout_move_selection(s, possible_moves)
 	new_s := s.ExecuteMove(selected_move)
 	game_over, _ := new_s.GameOver()
 	if !game_over {
 		opponent_possible_moves := new_s.PossibleMoves()
-		opponent_selected_move := random_element(opponent_possible_moves)
+		opponent_selected_move := p.rollout_move_selection(new_s, opponent_possible_moves)
 		new_s = new_s.ExecuteMove(opponent_selected_move)
 	}
 	return new_s
+}
+
+func (p *POMCP) rollout_move_selection(s chess.ChessVariation, possible_moves []chess.Move) chess.Move {
+	var capture_moves []chess.Move
+	for _, move := range possible_moves {
+		if move.Capture {
+			capture_moves = append(capture_moves, move)
+		}
+	}
+	var selected_move chess.Move
+	if len(capture_moves) > 0 && rand.Float64() < p.Settings.Rollout_capture {
+		selected_move = random_element(capture_moves)
+	} else {
+		selected_move = random_element(possible_moves)
+	}
+	return selected_move
 }
 
 func (p *POMCP) get_most_promising_action_by_ucb(h *Node) chess.Move {

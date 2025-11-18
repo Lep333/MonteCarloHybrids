@@ -239,6 +239,57 @@ func (d *DarkPawnChess) CreateView() ChessVariation {
 	return &copy
 }
 
+func (d *DarkPawnChess) Heuristic() float64 {
+	value := 0.0
+	no_white_pawns := 0
+	no_black_pawns := 0
+	white_coverage := 0
+	black_coverage := 0
+	round_no := d.GetNumberOfMoves()
+	white_to_play := round_no%2 == 0
+	for i := uint(0); i < row_length*row_length; i++ {
+		if (d.black_pawns >> i & 0b1) == 1 {
+			no_black_pawns++
+			if d.white_pawns&(i+row_length+1) == 1 {
+				black_coverage++
+			}
+			if d.white_pawns&(i+row_length-1) == 1 {
+				black_coverage++
+			}
+		}
+		if (d.white_pawns >> i & 0b1) == 1 {
+			no_white_pawns++
+			if d.white_pawns&(i-row_length+1) == 1 {
+				white_coverage++
+			}
+			if d.white_pawns&(i-row_length-1) == 1 {
+				white_coverage++
+			}
+		}
+	}
+
+	var material_advantage float64
+	var coverage float64
+	if white_to_play {
+		material_advantage = float64(no_white_pawns / (no_white_pawns + no_black_pawns))
+		if white_coverage+black_coverage == 0 {
+			coverage = 1
+		} else {
+			coverage = float64(white_coverage / (white_coverage + black_coverage))
+		}
+	} else {
+		material_advantage = float64(no_black_pawns / (no_white_pawns + no_black_pawns))
+		if white_coverage+black_coverage == 0 {
+			coverage = 1
+		} else {
+			coverage = float64(black_coverage / (white_coverage + black_coverage))
+		}
+	}
+
+	value = (material_advantage + coverage) / 2
+	return value
+}
+
 func (d *DarkPawnChess) String() string {
 	board := ""
 	for i := int(no_fields - 1); i >= 0; i-- {
