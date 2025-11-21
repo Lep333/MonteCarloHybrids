@@ -13,48 +13,56 @@ func main() {
 	var player1, player2 player.Player
 	player1 = &player.RandomPlayer{}
 	settings := player.Settings{
-		Termination_parameter: 3000,
+		Termination_parameter: 2000,
 		Gamma:                 0.95,
 		Epsilon:               0.005,
-		Ucb_c:                 2,
-		Capture_reward:        0.8,
-		Rollout_capture:       0.7,
+		Ucb_c:                 8,
+		Capture_reward:        0.2,
+		Rollout_capture:       0.95,
 	}
 	player2 = &player.POMCP{Root: nil, Started_playing: false, Last_move: chess_variation.Move{}, Settings: settings}
 	greedy_wins := 0
 	pomcp_wins := 0
-	c_values := []int{5}
-	for _, c := range c_values {
-		settings.Ucb_c = float64(c)
-		iterations := 100
-		for i := 0; i < iterations; i++ {
-			if i == int(iterations/2) {
-				temp := player1
-				player1 = player2
-				player2 = temp
+	time_termination := []int{5000}
+	c_values := []float64{1}
+	capture_reward := []float64{0.2}
+	for _, time_limit := range time_termination {
+		for _, c := range c_values {
+			for _, capture_rew := range capture_reward {
+				settings.Ucb_c = c
+				settings.Termination_parameter = time_limit
+				settings.Capture_reward = capture_rew
+				iterations := 10
+				for i := 0; i < iterations; i++ {
+					if i == int(iterations/2) {
+						temp := player1
+						player1 = player2
+						player2 = temp
+					}
+					winner, moves := server.PlayGame(&dark_pawn_chess, player1, player2)
+					if winner == 1 && player1.String() == "POMCP" || winner == -1 && player2.String() == "POMCP" {
+						pomcp_wins++
+					} else if winner != 0 {
+						greedy_wins++
+					}
+					// player1, player2, winner, threads, termination_condition, termination_parameter, ucb_c, moves, capture_reward
+					result_string := fmt.Sprintf(
+						"%v, %v, %v, %v, %v, %v, %v, %v, %v, %v\n",
+						player1.String(),
+						player2.String(),
+						winner,
+						1,
+						settings.Termination_parameter,
+						settings.Ucb_c,
+						settings.Gamma,
+						settings.Epsilon,
+						moves,
+						settings.Capture_reward,
+					)
+					// save_results(result_string)
+					print(result_string)
+				}
 			}
-			winner, moves := server.PlayGame(&dark_pawn_chess, player1, player2)
-			if winner == 1 && player1.String() == "POMCP" || winner == -1 && player2.String() == "POMCP" {
-				pomcp_wins++
-			} else if winner != 0 {
-				greedy_wins++
-			}
-			// player1, player2, winner, threads, termination_condition, termination_parameter, ucb_c, moves, capture_reward
-			result_string := fmt.Sprintf(
-				"%v, %v, %v, %v, %v, %v, %v, %v, %v, %v\n",
-				player1.String(),
-				player2.String(),
-				winner,
-				1,
-				settings.Termination_parameter,
-				settings.Ucb_c,
-				settings.Gamma,
-				settings.Epsilon,
-				moves,
-				settings.Capture_reward,
-			)
-			// save_results(result_string)
-			print(result_string)
 		}
 	}
 	fmt.Printf("%v wins: %v \n", player1.String(), pomcp_wins)

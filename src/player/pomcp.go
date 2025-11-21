@@ -26,6 +26,7 @@ type Settings struct {
 	Ucb_c                 float64
 	Capture_reward        float64
 	Rollout_capture       float64
+	Selection_Func        func() chess.Move
 }
 
 type Node struct {
@@ -82,7 +83,7 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 		if new_root == nil {
 			consistent_beliefs := map[string]chess.ChessVariation{}
 			for key, belief := range p.Root.beliefs {
-				new_s := p.state_transition(belief, p.Root)
+				new_s := p.state_transition(belief)
 				if new_s.CreateView().String() == board.String() {
 					consistent_beliefs[key] = belief
 				}
@@ -107,7 +108,7 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 
 func (p *POMCP) search(h *Node) chess.Move {
 	start_time := time.Now()
-	// for i := 0; i < 100000; i++ {
+	// for i := 0; i < 10000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
 		s := random_belief(h.beliefs)
 		p.simulate(s, h, 0)
@@ -122,7 +123,7 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 	if len(h.children) == 0 { // expand
 		// h.beliefs = append(h.beliefs, s)
 		h.children = create_all_children(s, h)
-		return p.rollout(s, h, depth)
+		return p.rollout(s, depth)
 	}
 	a := p.get_most_promising_action_by_ucb(h)
 	o := s.ExecuteMove(a)
@@ -145,11 +146,11 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 	return reward
 }
 
-func (p *POMCP) rollout(s chess.ChessVariation, h *Node, depth int) float64 {
+func (p *POMCP) rollout(s chess.ChessVariation, depth int) float64 {
 	if math.Pow(p.Settings.Gamma, float64(depth)) < p.Settings.Epsilon {
 		return 0
 	}
-	new_s := p.state_transition(s, h)
+	new_s := p.state_transition(s)
 	game_over, result := new_s.GameOver()
 	if game_over {
 		if !p.Started_playing {
@@ -161,7 +162,7 @@ func (p *POMCP) rollout(s chess.ChessVariation, h *Node, depth int) float64 {
 		}
 		return float64(result) // 1 for win -1 for lose
 	}
-	return new_s.Heuristic() + p.Settings.Gamma*p.rollout(new_s, h, depth+1)
+	return p.Settings.Gamma * p.rollout(new_s, depth+1)
 }
 
 func random_element[T any](collection []T) T {
@@ -179,7 +180,7 @@ func random_element[T any](collection []T) T {
 func random_belief(m map[string]chess.ChessVariation) chess.ChessVariation {
 	i := 0
 	if len(m) > 1 {
-		rand.Intn(len(m))
+		i = rand.Intn(len(m))
 	}
 	for _, value := range m {
 		if i == 0 {
@@ -249,7 +250,7 @@ func create_all_children(s chess.ChessVariation, h *Node) map[Combined_Key]*Node
 }
 
 // simulates random own move and opponents
-func (p *POMCP) state_transition(s chess.ChessVariation, h *Node) chess.ChessVariation {
+func (p *POMCP) state_transition(s chess.ChessVariation) chess.ChessVariation {
 	possible_moves := s.PossibleMoves()
 	if len(possible_moves) == 0 {
 		return s

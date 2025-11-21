@@ -271,14 +271,14 @@ func (d *DarkPawnChess) Heuristic() float64 {
 	var material_advantage float64
 	var coverage float64
 	if white_to_play {
-		material_advantage = float64(no_white_pawns / (no_white_pawns + no_black_pawns))
+		material_advantage = float64(no_white_pawns) / float64(no_white_pawns+no_black_pawns)
 		if white_coverage+black_coverage == 0 {
 			coverage = 1
 		} else {
 			coverage = float64(white_coverage / (white_coverage + black_coverage))
 		}
 	} else {
-		material_advantage = float64(no_black_pawns / (no_white_pawns + no_black_pawns))
+		material_advantage = float64(no_black_pawns) / float64(no_white_pawns+no_black_pawns)
 		if white_coverage+black_coverage == 0 {
 			coverage = 1
 		} else {

@@ -32,7 +32,7 @@ func TestGetMove(t *testing.T) {
 		Epsilon:               0.005,
 		Ucb_c:                 1,
 		Capture_reward:        0.2,
-		Rollout_capture:       0.7,
+		Rollout_capture:       0.85,
 	}
 	pomcp = &POMCP{}
 	dark_chess = &chess_variation.DarkPawnChess{}

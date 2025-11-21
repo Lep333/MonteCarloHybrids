@@ -1,34 +1,49 @@
 file_name = "results.csv"
 csv = ""
 
-with open(file_name, mode="+r") as f:
-    csv = f.readlines()
+def main():
+    with open(file_name, mode="+r") as f:
+        csv = f.readlines()
 
-result = {}
-for line in csv:
-    fields = line.split(",")
-    if val := result.get(fields[5]):
-        if fields[0] == "POMCP":
-            if int(fields[2]) > 0:
-                result[fields[5]] = (result[fields[5]][0] + 1, result[fields[5]][1])
-            elif int(fields[2]) < 0:
-                result[fields[5]] = (result[fields[5]][0], result[fields[5]][1] + 1)
+    result = {"c": {}, "time": {}, "capture": {}}
+    i = 0
+    for line in csv:
+        fields = line.replace("\n", "").split(",")
+        time_limit = fields[4]
+        ucb_c = fields[5]
+        capture_reward = fields[8]
+        sum_result("time", result, fields, 4)
+        sum_result("c", result, fields, 5)
+        sum_result("capture", result, fields, 9)
+        if i == 199:
+            print(result)
+            result = {"c": {}, "time": {}, "capture": {}}
+            i = 0
+        i+=1
+
+def sum_result(category: str, results: dict, line: list, field_no: int):
+    if results[category].get(line[field_no]):
+        if line[0] == "POMCP":
+            if int(line[2]) > 0:
+                results[category][line[field_no]] = (results[category][line[field_no]][0] + 1, results[category][line[field_no]][1])
+            elif int(line[2]) < 0:
+                results[category][line[field_no]] = (results[category][line[field_no]][0], results[category][line[field_no]][1] + 1)
         else:
-            if int(fields[2]) < 0:
-                result[fields[5]] = (result[fields[5]][0] + 1, result[fields[5]][1])
-            elif int(fields[2]) > 0:
-                result[fields[5]] = (result[fields[5]][0], result[fields[5]][1] + 1)
+            if int(line[2]) < 0:
+                results[category][line[field_no]] = (results[category][line[field_no]][0] + 1, results[category][line[field_no]][1])
+            elif int(line[2]) > 0:
+                results[category][line[field_no]] = (results[category][line[field_no]][0], results[category][line[field_no]][1] + 1)
     else:
-        if fields[0] == "POMCP":
-            if int(fields[2]) > 0:
-                result[fields[5]] = (1, 0)
-            elif int(fields[2]) < 0:
-                result[fields[5]] = (0, 1)
+        if line[0] == "POMCP":
+            if int(line[2]) > 0:
+                results[category][line[field_no]] = (1, 0)
+            elif int(line[2]) < 0:
+                results[category][line[field_no]] = (0, 1)
         else:
-            if int(fields[2]) < 0:
-                result[fields[5]] = (1, 0)
-            elif int(fields[2]) > 0:
-                result[fields[5]] = (0, 1)
+            if int(line[2]) < 0:
+                results[category][line[field_no]] = (1, 0)
+            elif int(line[2]) > 0:
+                results[category][line[field_no]] = (0, 1)
 
-for key, val in result.items():
-    print(f"{key}: {val}")
+if __name__ == "__main__":
+    main()
