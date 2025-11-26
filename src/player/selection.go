@@ -11,7 +11,7 @@ type MoveScore struct {
 	score float64
 }
 
-func Corrective(s chess_variation.ChessVariation, h *Node) chess_variation.Move {
+func Corrective(s chess_variation.ChessVariation) chess_variation.Move {
 	default_value := s.Heuristic()
 	moves := s.PossibleMoves()
 	if len(moves) == 0 {
@@ -45,7 +45,7 @@ func Corrective(s chess_variation.ChessVariation, h *Node) chess_variation.Move 
 }
 
 // selects a move that has the best score of: heuristic or selects with x% a rand move
-func Greedy(s chess_variation.ChessVariation, h *Node) chess_variation.Move {
+func Greedy(s chess_variation.ChessVariation) chess_variation.Move {
 	rand_move_probability := 0.2
 	max_score := math.Inf(-1)
 	var best_move chess_variation.Move

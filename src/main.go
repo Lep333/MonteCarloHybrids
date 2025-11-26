@@ -11,20 +11,19 @@ import (
 func main() {
 	dark_pawn_chess := chess_variation.DarkPawnChess{}
 	var player1, player2 player.Player
-	player1 = &player.RandomPlayer{}
 	settings := player.Settings{
-		Termination_parameter: 2000,
+		Termination_parameter: 1000,
 		Gamma:                 0.95,
 		Epsilon:               0.005,
-		Ucb_c:                 8,
+		Ucb_c:                 1,
 		Capture_reward:        0.2,
-		Rollout_capture:       0.95,
+		Rollout_capture:       0.7,
 	}
-	player2 = &player.POMCP{Root: nil, Started_playing: false, Last_move: chess_variation.Move{}, Settings: settings}
+
 	greedy_wins := 0
 	pomcp_wins := 0
-	time_termination := []int{5000}
-	c_values := []float64{1}
+	time_termination := []int{1000}
+	c_values := []float64{2, 4, 6, 8, 10}
 	capture_reward := []float64{0.2}
 	for _, time_limit := range time_termination {
 		for _, c := range c_values {
@@ -32,7 +31,9 @@ func main() {
 				settings.Ucb_c = c
 				settings.Termination_parameter = time_limit
 				settings.Capture_reward = capture_rew
-				iterations := 10
+				player1 = &player.RandomPlayer{}
+				player2 = &player.POMCP{Root: nil, Started_playing: false, Last_move: chess_variation.Move{}, Settings: settings}
+				iterations := 100
 				for i := 0; i < iterations; i++ {
 					if i == int(iterations/2) {
 						temp := player1
@@ -59,7 +60,7 @@ func main() {
 						moves,
 						settings.Capture_reward,
 					)
-					// save_results(result_string)
+					save_results(result_string)
 					print(result_string)
 				}
 			}

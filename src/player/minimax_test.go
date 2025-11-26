@@ -1,21 +1,10 @@
 package player
 
 import (
+	"math"
 	"monte_carlo_hybrids/chess_variation"
 	"testing"
 )
-
-// b b b b o
-// o o o o o
-// o o w o o
-// o w o o b
-// w o o w w
-
-// b o b o o
-// o o b b o
-// o o o o o
-// o w o w b
-// w o o o w
 
 // b b o o o
 // o o o o o
@@ -23,18 +12,18 @@ import (
 // w o o o w
 // o w o w o
 // expect to select Move(5,11)
-func TestGetMove(t *testing.T) {
+func TestGetMoveMinimax(t *testing.T) {
 	var pomcp Player
 	var dark_chess chess_variation.ChessVariation
 	settings := Settings{
-		Termination_parameter: 2000,
+		Termination_parameter: 10000,
 		Gamma:                 0.95,
 		Epsilon:               0.005,
 		Ucb_c:                 1,
 		Capture_reward:        0.2,
-		Rollout_capture:       0.7,
+		Rollout_capture:       0.2,
 	}
-	pomcp = &POMCP{nil, true, chess_variation.Move{}, settings}
+	pomcp = &POMCP{}
 	dark_chess = &chess_variation.DarkPawnChess{}
 	dc, ok := dark_chess.(*chess_variation.DarkPawnChess)
 	if ok {
@@ -49,10 +38,16 @@ func TestGetMove(t *testing.T) {
 		p.Root.beliefs[dc.String()] = dc
 		p.Started_playing = true
 		p.Settings = settings
-		move := p.GetMove(dark_chess, true)
+		moves := Minimax(dark_chess, false, 0)
 		best_move := chess_variation.Move{5, 11, true}
-		if move != best_move {
-			t.Errorf("Best move should be %v, but returned with %v", best_move, move)
+		minimax_best_move := Move_With_Score{chess_variation.Move{}, math.Inf(-1)}
+		for _, move := range moves {
+			if move.score > minimax_best_move.score {
+				minimax_best_move = move
+			}
+		}
+		if minimax_best_move.move != best_move {
+			t.Errorf("Best move should be %v, but returned with %v", best_move, minimax_best_move.move)
 		}
 	}
 }

@@ -47,7 +47,7 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	p.Init_pomcp(board, whiteToPlay)
 	prune_tree_and_update_beliefs(p, board)
 	selected_move := p.search(p.Root)
-	// println("visits: ", p.Root.visits)
+	println("visits: ", p.Root.visits)
 	p.Last_move = selected_move
 	return selected_move
 }
@@ -108,9 +108,12 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 
 func (p *POMCP) search(h *Node) chess.Move {
 	start_time := time.Now()
-	// for i := 0; i < 10000; i++ {
+	// for i := 0; i < 20000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
 		s := random_belief(h.beliefs)
+		if len(h.children) == 0 {
+			h.children = create_all_children(s, h)
+		}
 		p.simulate(s, h, 0)
 	}
 	return get_best_move(h)
@@ -122,7 +125,7 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 	}
 	if len(h.children) == 0 { // expand
 		// h.beliefs = append(h.beliefs, s)
-		h.children = create_all_children(s, h)
+		// h.children = create_all_children(s, h)
 		return p.rollout(s, depth)
 	}
 	a := p.get_most_promising_action_by_ucb(h)
@@ -138,7 +141,7 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 		h.children[Combined_Key{a, o.CreateView().String()}] = &Node{h, nil, 0, 0, a, o, map[string]chess.ChessVariation{}}
 		ha = h.children[Combined_Key{a, o.CreateView().String()}]
 	}
-	reward := o.Heuristic() + p.Settings.Gamma*p.simulate(o, ha, depth+1)
+	reward := p.Settings.Gamma * p.simulate(o, ha, depth+1)
 	h.beliefs[s.String()] = s
 	h.visits++
 	ha.visits++
