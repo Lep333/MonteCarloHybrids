@@ -12,25 +12,27 @@ func main() {
 	dark_pawn_chess := chess_variation.DarkPawnChess{}
 	var player1, player2 player.Player
 	settings := player.Settings{
-		Termination_parameter: 1000,
-		Gamma:                 0.95,
-		Epsilon:               0.005,
-		Ucb_c:                 1,
-		Capture_reward:        0.2,
-		Rollout_capture:       0.7,
+		Termination_parameter:  1000,
+		Gamma:                  0.95,
+		Epsilon:                0.005,
+		Ucb_c:                  1,
+		Capture_reward:         0.2,
+		Rollout_capture:        0.7,
+		Termination_Func:       player.Early_playout_termination,
+		Termination_func_param: 6.0,
 	}
 
 	greedy_wins := 0
 	pomcp_wins := 0
 	time_termination := []int{1000}
-	c_values := []float64{2, 4, 6, 8, 10}
-	capture_reward := []float64{0.2}
+	c_values := []float64{2}
+	rollout_capture := []float64{0.85}
 	for _, time_limit := range time_termination {
 		for _, c := range c_values {
-			for _, capture_rew := range capture_reward {
+			for _, roll_cap := range rollout_capture {
 				settings.Ucb_c = c
 				settings.Termination_parameter = time_limit
-				settings.Capture_reward = capture_rew
+				settings.Rollout_capture = roll_cap
 				player1 = &player.RandomPlayer{}
 				player2 = &player.POMCP{Root: nil, Started_playing: false, Last_move: chess_variation.Move{}, Settings: settings}
 				iterations := 100
@@ -46,9 +48,9 @@ func main() {
 					} else if winner != 0 {
 						greedy_wins++
 					}
-					// player1, player2, winner, threads, termination_condition, termination_parameter, ucb_c, moves, capture_reward
+					// player1, player2, winner, threads, termination_condition, termination_parameter, ucb_c, moves, capture_reward, rollout_capture
 					result_string := fmt.Sprintf(
-						"%v, %v, %v, %v, %v, %v, %v, %v, %v, %v\n",
+						"%v, %v, %v, %v, %v, %v, %v, %v, %v, %v, %v \n",
 						player1.String(),
 						player2.String(),
 						winner,
@@ -59,8 +61,9 @@ func main() {
 						settings.Epsilon,
 						moves,
 						settings.Capture_reward,
+						settings.Rollout_capture,
 					)
-					save_results(result_string)
+					// save_results(result_string) // TODO: remove for saving results
 					print(result_string)
 				}
 			}

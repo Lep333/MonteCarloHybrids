@@ -20,13 +20,15 @@ type Combined_Key struct {
 }
 
 type Settings struct {
-	Termination_parameter int
-	Gamma                 float64
-	Epsilon               float64
-	Ucb_c                 float64
-	Capture_reward        float64
-	Rollout_capture       float64
-	Selection_Func        func() chess.Move
+	Termination_parameter  int
+	Gamma                  float64
+	Epsilon                float64
+	Ucb_c                  float64
+	Capture_reward         float64
+	Rollout_capture        float64
+	Selection_Func         func() chess.Move
+	Termination_Func       func(chess.ChessVariation, float64, float64) (bool, float64)
+	Termination_func_param float64
 }
 
 type Node struct {
@@ -153,6 +155,12 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int) float64 {
 	if math.Pow(p.Settings.Gamma, float64(depth)) < p.Settings.Epsilon {
 		return 0
 	}
+	// TODO: termination
+	termination, val := p.Settings.Termination_Func(s, float64(depth), p.Settings.Termination_func_param)
+	if termination {
+		return val
+	}
+	// TODO: rollout
 	new_s := p.state_transition(s)
 	game_over, result := new_s.GameOver()
 	if game_over {
@@ -248,7 +256,6 @@ func create_all_children(s chess.ChessVariation, h *Node) map[Combined_Key]*Node
 			}
 		}
 	}
-
 	return possible_transitions
 }
 

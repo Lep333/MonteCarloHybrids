@@ -69,3 +69,44 @@ func Greedy(s chess_variation.ChessVariation) chess_variation.Move {
 	}
 	return best_move
 }
+
+// returns heuristic of best move
+func Early_playout_termination(s chess_variation.ChessVariation, depth float64, max_depth float64) (bool, float64) {
+	max_score := math.Inf(-1)
+	if depth < max_depth {
+		return false, 0.0
+	}
+	if depth >= max_depth {
+		for _, move := range s.PossibleMoves() {
+			new_s := s.ExecuteMove(move)
+			score := new_s.Heuristic()
+			if score > max_score {
+				max_score = score
+			}
+		}
+	}
+	return true, max_score
+}
+
+// returns the next move in rollout phase
+// TODO: remove determinism?
+func MCTS_with_informed_rollouts(s chess_variation.ChessVariation) chess_variation.Move {
+	best_move, _ := Minimax(s, true, 0, 4)
+	return best_move
+}
+
+func MCTS_with_informed_cutoffs(s chess_variation.ChessVariation, depth int) float64 {
+	max_depth := 10
+	score := math.Inf(-1)
+	if depth == max_depth {
+		_, score = Minimax(s, true, 0, 4)
+	}
+	return score
+}
+
+// inits nodes with Minimax results
+func MCTS_with_informed_priors(new_node Node, s chess_variation.ChessVariation, weight int) {
+	_, score := Minimax(s, true, 0, 4)
+	new_node.value = score * float64(weight)
+	new_node.visits = weight
+}
