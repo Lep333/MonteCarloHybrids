@@ -5,18 +5,18 @@ import (
 	"slices"
 )
 
-const row_length uint = 5
-const no_fields uint = row_length * row_length
-const black_base_line_start uint = row_length * (row_length - 1)
-const row_bitmask uint = (1 << row_length) - 1
+const row_length_dpc uint = 5
+const no_fields_dpc uint = row_length_dpc * row_length_dpc
+const black_base_line_start_dpc uint = row_length_dpc * (row_length_dpc - 1)
+const row_bitmask_dpc uint = (1 << row_length_dpc) - 1
 
 type DarkPawnChess struct {
 	white_pawns         uint
-	white_pawns_moves   [no_fields]uint
-	white_pawns_capture [no_fields]uint
+	white_pawns_moves   [no_fields_dpc]uint
+	white_pawns_capture [no_fields_dpc]uint
 	black_pawns         uint
-	black_pawns_moves   [no_fields]uint
-	black_pawns_capture [no_fields]uint
+	black_pawns_moves   [no_fields_dpc]uint
+	black_pawns_capture [no_fields_dpc]uint
 	whiteToPlay         bool
 	number_of_moves     int
 }
@@ -24,32 +24,32 @@ type DarkPawnChess struct {
 func (d *DarkPawnChess) InitGame() {
 	d.whiteToPlay = true
 	d.number_of_moves = 0
-	d.white_pawns = row_bitmask
+	d.white_pawns = row_bitmask_dpc
 	//d.white_pawns = 0b1111
-	d.black_pawns = row_bitmask << black_base_line_start
-	//d.black_pawns = 0b11000 << black_base_line_start
-	d.white_pawns_capture = [no_fields]uint{}
-	d.black_pawns_capture = [no_fields]uint{}
+	d.black_pawns = row_bitmask_dpc << black_base_line_start_dpc
+	//d.black_pawns = 0b11000 << black_base_line_start_dpc
+	d.white_pawns_capture = [no_fields_dpc]uint{}
+	d.black_pawns_capture = [no_fields_dpc]uint{}
 
-	for i := uint(0); i < no_fields; i++ {
-		if i < no_fields-row_length {
-			d.white_pawns_moves[i] = 0b1 << (i + row_length)
-			if i%row_length != row_length-1 {
-				d.white_pawns_capture[i] += 0b1 << (i + row_length + 1) // left capture
+	for i := uint(0); i < no_fields_dpc; i++ {
+		if i < no_fields_dpc-row_length_dpc {
+			d.white_pawns_moves[i] = 0b1 << (i + row_length_dpc)
+			if i%row_length_dpc != row_length_dpc-1 {
+				d.white_pawns_capture[i] += 0b1 << (i + row_length_dpc + 1) // left capture
 			}
-			if i%row_length != 0 {
-				d.white_pawns_capture[i] += 0b1 << (i + row_length - 1) // right capture
+			if i%row_length_dpc != 0 {
+				d.white_pawns_capture[i] += 0b1 << (i + row_length_dpc - 1) // right capture
 			}
 		}
 
-		if i >= row_length {
-			d.black_pawns_moves[i] = 0b1 << (i - row_length)
+		if i >= row_length_dpc {
+			d.black_pawns_moves[i] = 0b1 << (i - row_length_dpc)
 
-			if i%row_length != row_length-1 {
-				d.black_pawns_capture[i] += 0b1 << (i - row_length + 1) // left capture
+			if i%row_length_dpc != row_length_dpc-1 {
+				d.black_pawns_capture[i] += 0b1 << (i - row_length_dpc + 1) // left capture
 			}
-			if i%row_length != 0 {
-				d.black_pawns_capture[i] += 0b1 << (i - row_length - 1) // right capture
+			if i%row_length_dpc != 0 {
+				d.black_pawns_capture[i] += 0b1 << (i - row_length_dpc - 1) // right capture
 			}
 		}
 	}
@@ -74,13 +74,13 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 	winner := 0
 
 	// check for opposing pawns on base line
-	for i := uint(0); i < row_length; i++ {
-		if d.black_pawns&row_bitmask > 0 {
+	for i := uint(0); i < row_length_dpc; i++ {
+		if d.black_pawns&row_bitmask_dpc > 0 {
 			game_over = true
 			winner = -1
 		}
 
-		if d.white_pawns&(row_bitmask<<black_base_line_start) > 0 {
+		if d.white_pawns&(row_bitmask_dpc<<black_base_line_start_dpc) > 0 {
 			game_over = true
 			winner = 1
 		}
@@ -90,7 +90,7 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 		game_over = true
 		no_of_white_pieces := 0
 		no_of_black_pieces := 0
-		for i := uint(0); i < no_fields; i++ {
+		for i := uint(0); i < no_fields_dpc; i++ {
 			if d.white_pawns>>i&1 == 1 {
 				no_of_white_pieces++
 			}
@@ -122,7 +122,7 @@ func (d *DarkPawnChess) PossibleMoves() []Move {
 func (d *DarkPawnChess) get_moves() []Move {
 	moves := []Move{}
 
-	for i := uint(0); i < no_fields; i++ {
+	for i := uint(0); i < no_fields_dpc; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns & ^d.white_pawns
 			if move_to_possible > 0 {
@@ -131,7 +131,7 @@ func (d *DarkPawnChess) get_moves() []Move {
 			}
 
 			capture_possible := d.white_pawns_capture[i] & d.black_pawns
-			for position := uint(0); position < no_fields; position++ {
+			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
 					moves = append(moves, move)
@@ -147,7 +147,7 @@ func (d *DarkPawnChess) get_moves() []Move {
 			}
 
 			capture_possible := d.black_pawns_capture[i] & d.white_pawns
-			for position := uint(0); position < no_fields; position++ {
+			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
 					moves = append(moves, move)
@@ -161,7 +161,7 @@ func (d *DarkPawnChess) get_moves() []Move {
 func (d *DarkPawnChess) get_vision() []Move {
 	moves := []Move{}
 
-	for i := uint(0); i < no_fields; i++ {
+	for i := uint(0); i < no_fields_dpc; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.white_pawns_moves[i]
 			if move_to_possible > 0 {
@@ -170,7 +170,7 @@ func (d *DarkPawnChess) get_vision() []Move {
 			}
 
 			capture_possible := d.white_pawns_capture[i] & d.black_pawns
-			for position := uint(0); position < no_fields; position++ {
+			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
 					moves = append(moves, move)
@@ -186,7 +186,7 @@ func (d *DarkPawnChess) get_vision() []Move {
 			}
 
 			capture_possible := d.black_pawns_capture[i] & d.white_pawns
-			for position := uint(0); position < no_fields; position++ {
+			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
 					moves = append(moves, move)
@@ -247,22 +247,22 @@ func (d *DarkPawnChess) Heuristic() float64 {
 	black_coverage := 0
 	round_no := d.GetNumberOfMoves()
 	white_to_play := round_no%2 == 0
-	for i := uint(0); i < row_length*row_length; i++ {
+	for i := uint(0); i < row_length_dpc*row_length_dpc; i++ {
 		if (d.black_pawns >> i & 0b1) == 1 {
 			no_black_pawns++
-			if d.white_pawns&(i+row_length+1) == 1 {
+			if d.white_pawns&(i+row_length_dpc+1) == 1 {
 				black_coverage++
 			}
-			if d.white_pawns&(i+row_length-1) == 1 {
+			if d.white_pawns&(i+row_length_dpc-1) == 1 {
 				black_coverage++
 			}
 		}
 		if (d.white_pawns >> i & 0b1) == 1 {
 			no_white_pawns++
-			if d.white_pawns&(i-row_length+1) == 1 {
+			if d.white_pawns&(i-row_length_dpc+1) == 1 {
 				white_coverage++
 			}
-			if d.white_pawns&(i-row_length-1) == 1 {
+			if d.white_pawns&(i-row_length_dpc-1) == 1 {
 				white_coverage++
 			}
 		}
@@ -292,7 +292,7 @@ func (d *DarkPawnChess) Heuristic() float64 {
 
 func (d *DarkPawnChess) String() string {
 	board := ""
-	for i := int(no_fields - 1); i >= 0; i-- {
+	for i := int(no_fields_dpc - 1); i >= 0; i-- {
 		if d.white_pawns&(0b1<<i) != 0 {
 			board += "w "
 		} else if d.black_pawns&(0b1<<i) != 0 {
@@ -300,7 +300,7 @@ func (d *DarkPawnChess) String() string {
 		} else {
 			board += "o "
 		}
-		if uint(i)%row_length == 0 {
+		if uint(i)%row_length_dpc == 0 {
 			board += "\n"
 		}
 	}
