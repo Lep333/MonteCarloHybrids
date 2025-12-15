@@ -39,9 +39,9 @@ func (l *LosAlamosChess) InitGame() {
 	l.black_rooks = l.white_rooks << (row_length_lac * 5)
 	l.white_knights = 0b010010
 	l.black_knights = l.white_knights << (row_length_lac * 5)
-	l.white_king = 0b000100
+	l.white_king = 0b001000
 	l.black_king = l.white_king << (row_length_lac * 5)
-	l.white_queen = 0b001000
+	l.white_queen = 0b00100
 	l.black_queen = l.white_queen << (row_length_lac * 5)
 	l.knights_moves = [no_fields_lac]uint{}
 
@@ -167,149 +167,73 @@ func (l *LosAlamosChess) GetNumberOfMoves() int {
 
 func (l *LosAlamosChess) PossibleMoves() []Move {
 	possible_moves := []Move{}
-	if l.whiteToPlay {
-		for i := uint(0); i < no_fields_lac; i++ {
-			// pawns
-			if l.white_pawns&(0b1<<i) > 0 {
-				moves_possible := (l.white_pawns_moves[i] & ^l.black_occupancy &
-					^l.white_occupancy) |
-					(l.white_pawns_capture[i] & l.black_occupancy)
-				moves := l.move_bitboard_to_moves(i, moves_possible)
-				possible_moves = append(possible_moves, moves...)
-			}
-			// rooks
-			rook_moves := l.get_rook_moves(i)
-			possible_moves = append(possible_moves, rook_moves...)
-			// knights
-			if l.white_knights&(0b1<<i) > 0 {
-				moves_possible := l.knights_moves[i] & ^l.white_occupancy
-				moves := l.move_bitboard_to_moves(i, moves_possible)
-				possible_moves = append(possible_moves, moves...)
-			}
-			// queen
-			if l.white_queen&(0b1<<i) > 0 {
-				// up right
-				index := i + 7
-				for index < no_fields_lac && !(i%row_length_lac == 5) {
-					capture := false
-					if l.white_occupancy&0b1<<index > 0 {
-						break
-					}
-					if l.black_occupancy&0b1<<index > 0 {
-						capture = true
-					}
-					move := Move{From: int8(i), To: int8(index), Capture: capture}
-					possible_moves = append(possible_moves, move)
-					if index%row_length_lac == 5 {
-						break
-					}
-				}
-			}
-			// king
-			if l.white_king&(0b1<<i) > 0 {
-				moves_possible := l.king_moves[i] & ^l.white_occupancy
-				moves := l.move_bitboard_to_moves(i, moves_possible)
-				possible_moves = append(possible_moves, moves...)
-			}
-		}
-	} else {
-		for i := uint(0); i < no_fields_lac; i++ {
-			// pawns
-			if l.black_pawns&(0b1<<i) > 0 {
-				moves_possible := (l.black_pawns_moves[i] & ^l.black_occupancy &
-					^l.white_occupancy) |
-					(l.black_pawns_capture[i] & l.white_occupancy)
-				moves := l.move_bitboard_to_moves(i, moves_possible)
-				possible_moves = append(possible_moves, moves...)
-			}
-			// rooks
-			if l.black_rooks&(0b1<<i) > 0 {
-				// upwards
-				index := int(i + row_length_lac)
-				for index < int(no_fields_lac) {
-					if l.black_occupancy&(0b1<<index) > 0 {
-						break
-					}
-					if l.white_occupancy&(0b1<<index) > 0 {
-						move := Move{From: int8(i), To: int8(index), Capture: true}
-						possible_moves = append(possible_moves, move)
-						break
-					}
-					move := Move{From: int8(i), To: int8(index), Capture: false}
-					possible_moves = append(possible_moves, move)
-					index += int(row_length_lac)
-				}
-				// down
-				index = int(i) - int(row_length_lac)
-				for index >= 0 {
-					if l.black_occupancy&(0b1<<index) > 0 {
-						break
-					}
-					if l.white_occupancy&(0b1<<index) > 0 {
-						move := Move{From: int8(i), To: int8(index), Capture: true}
-						possible_moves = append(possible_moves, move)
-						break
-					}
-					move := Move{From: int8(i), To: int8(index), Capture: false}
-					possible_moves = append(possible_moves, move)
-					index += int(row_length_lac)
-				}
-				// right
-				index = int(i) + 1
-				for index < int(no_fields_lac) {
-					capture := false
-					if l.black_occupancy&(0b1<<index) > 0 {
-						break
-					}
-					if l.white_occupancy&(0b1<<index) > 0 {
-						capture = true
-					}
-					if index%int(row_length_lac) == int(row_length_lac)-1 {
-						move := Move{From: int8(i), To: int8(index), Capture: capture}
-						possible_moves = append(possible_moves, move)
-						break
-					}
-					move := Move{From: int8(i), To: int8(index), Capture: false}
-					possible_moves = append(possible_moves, move)
-					index++
-				}
-				// left
-				index = int(i) - 1
-				for index >= 0 {
-					capture := false
-					if l.black_occupancy&(0b1<<index) > 0 {
-						break
-					}
-					if l.white_occupancy&(0b1<<index) > 0 {
-						capture = true
-					}
-					if index%int(row_length_lac) == 0 {
-						move := Move{From: int8(i), To: int8(index), Capture: capture}
-						possible_moves = append(possible_moves, move)
-						break
-					}
-					move := Move{From: int8(i), To: int8(index), Capture: false}
-					possible_moves = append(possible_moves, move)
-					index--
-				}
-			}
-			// knights
-			if l.black_knights&(0b1<<i) > 0 {
-				moves_possible := l.knights_moves[i] & ^l.black_occupancy
-				moves := l.move_bitboard_to_moves(i, moves_possible)
-				possible_moves = append(possible_moves, moves...)
-			}
-			// queen
-			// TODO
-			// king
-			if l.black_king&(0b1<<i) > 0 {
-				moves_possible := l.king_moves[i] & ^l.black_occupancy
-				moves := l.move_bitboard_to_moves(i, moves_possible)
-				possible_moves = append(possible_moves, moves...)
-			}
-		}
+
+	moves := l.generate_moves()
+	possible_moves = append(possible_moves, moves...)
+
+	return possible_moves
+}
+
+func (l *LosAlamosChess) generate_moves() []Move {
+	possible_moves := []Move{}
+
+	own_pawns := l.white_pawns
+	own_pawns_moves := l.white_pawns_moves
+	own_pawns_capture := l.white_pawns_capture
+	own_rooks := l.white_rooks
+	own_knights := l.white_knights
+	own_queen := l.white_queen
+	own_king := l.white_king
+	own_occupancy := l.white_occupancy
+	opponent_occupancy := l.black_occupancy
+	white_to_play := true
+	if !l.whiteToPlay {
+		own_pawns = l.black_pawns
+		own_pawns_moves = l.black_pawns_moves
+		own_pawns_capture = l.black_pawns_capture
+		own_rooks = l.black_rooks
+		own_knights = l.black_knights
+		own_queen = l.black_queen
+		own_king = l.black_king
+		own_occupancy = l.black_occupancy
+		opponent_occupancy = l.white_occupancy
+		white_to_play = false
 	}
 
+	for i := uint(0); i < no_fields_lac; i++ {
+		// pawns
+		if own_pawns&(0b1<<i) > 0 {
+			moves_possible := (own_pawns_moves[i] & ^opponent_occupancy &
+				^own_occupancy) |
+				(own_pawns_capture[i] & opponent_occupancy)
+			moves := l.move_bitboard_to_moves(i, moves_possible)
+			possible_moves = append(possible_moves, moves...)
+		}
+		// rooks
+		if own_rooks&(0b1<<i) > 0 {
+			rook_moves := l.get_rook_moves(i, white_to_play)
+			possible_moves = append(possible_moves, rook_moves...)
+		}
+		// knights
+		if own_knights&(0b1<<i) > 0 {
+			moves_possible := l.knights_moves[i] & ^own_occupancy
+			moves := l.move_bitboard_to_moves(i, moves_possible)
+			possible_moves = append(possible_moves, moves...)
+		}
+		// queen
+		if own_queen&(0b1<<i) > 0 {
+			rook_moves := l.get_rook_moves(i, white_to_play)
+			possible_moves = append(possible_moves, rook_moves...)
+			queen_moves := l.get_bishop_moves(i, white_to_play)
+			possible_moves = append(possible_moves, queen_moves...)
+		}
+		// king
+		if own_king&(0b1<<i) > 0 {
+			moves_possible := l.king_moves[i] & (^own_occupancy)
+			moves := l.move_bitboard_to_moves(i, moves_possible)
+			possible_moves = append(possible_moves, moves...)
+		}
+	}
 	return possible_moves
 }
 
@@ -328,79 +252,161 @@ func (l *LosAlamosChess) move_bitboard_to_moves(start uint, move_bitboard uint) 
 	return possible_moves
 }
 
-func (l *LosAlamosChess) get_rook_moves(i uint) []Move {
-	// TODO: set own_occupancy
-	// set opponent_occupancy
+func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
+	own_occupancy := l.white_occupancy
+	opponent_occupancy := l.black_occupancy
+	if !white_to_play {
+		own_occupancy = l.black_occupancy
+		opponent_occupancy = l.white_occupancy
+	}
 	possible_moves := []Move{}
-	if l.white_rooks&(0b1<<i) > 0 {
-		// up
-		index := int(i + row_length_lac)
-		for index < int(no_fields_lac) {
-			if l.white_occupancy&(0b1<<index) > 0 {
-				break
-			}
-			if l.black_occupancy&(0b1<<index) > 0 {
-				move := Move{From: int8(i), To: int8(index), Capture: true}
-				possible_moves = append(possible_moves, move)
-				break
-			}
-			move := Move{From: int8(i), To: int8(index), Capture: false}
-			possible_moves = append(possible_moves, move)
-			index += int(row_length_lac)
+
+	// up
+	index := int(i + row_length_lac)
+	for index < int(no_fields_lac) {
+		if own_occupancy&(0b1<<index) > 0 {
+			break
 		}
-		// down
-		index = int(i) - int(row_length_lac)
-		for index >= 0 {
-			if l.white_occupancy&(0b1<<index) > 0 {
-				break
-			}
-			if l.black_occupancy&(0b1<<index) > 0 {
-				move := Move{From: int8(i), To: int8(index), Capture: true}
-				possible_moves = append(possible_moves, move)
-				break
-			}
-			move := Move{From: int8(i), To: int8(index), Capture: false}
+		if opponent_occupancy&(0b1<<index) > 0 {
+			move := Move{From: int8(i), To: int8(index), Capture: true}
 			possible_moves = append(possible_moves, move)
-			index += int(row_length_lac)
+			break
 		}
-		// right
-		index = int(i) + 1
-		for index < int(no_fields_lac) {
-			capture := false
-			if l.white_occupancy&(0b1<<index) > 0 {
-				break
-			}
-			if l.black_occupancy&(0b1<<index) > 0 {
-				capture = true
-			}
-			if index%int(row_length_lac) == int(row_length_lac)-1 {
-				move := Move{From: int8(i), To: int8(index), Capture: capture}
-				possible_moves = append(possible_moves, move)
-				break
-			}
-			move := Move{From: int8(i), To: int8(index), Capture: false}
+		move := Move{From: int8(i), To: int8(index), Capture: false}
+		possible_moves = append(possible_moves, move)
+		index += int(row_length_lac)
+	}
+	// down
+	index = int(i) - int(row_length_lac)
+	for index >= 0 {
+		if own_occupancy&(0b1<<index) > 0 {
+			break
+		}
+		if opponent_occupancy&(0b1<<index) > 0 {
+			move := Move{From: int8(i), To: int8(index), Capture: true}
 			possible_moves = append(possible_moves, move)
-			index++
+			break
 		}
-		// left
-		index = int(i) - 1
-		for index >= 0 {
-			capture := false
-			if l.white_occupancy&(0b1<<index) > 0 {
-				break
-			}
-			if l.black_occupancy&(0b1<<index) > 0 {
-				capture = true
-			}
-			if index%int(row_length_lac) == 0 {
-				move := Move{From: int8(i), To: int8(index), Capture: capture}
-				possible_moves = append(possible_moves, move)
-				break
-			}
-			move := Move{From: int8(i), To: int8(index), Capture: false}
+		move := Move{From: int8(i), To: int8(index), Capture: false}
+		possible_moves = append(possible_moves, move)
+		index -= int(row_length_lac)
+	}
+	// right
+	index = int(i) + 1
+	for index < int(no_fields_lac) {
+		capture := false
+		if own_occupancy&(0b1<<index) > 0 {
+			break
+		}
+		if opponent_occupancy&(0b1<<index) > 0 {
+			capture = true
+		}
+		if index%int(row_length_lac) == int(row_length_lac)-1 {
+			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			possible_moves = append(possible_moves, move)
-			index--
+			break
 		}
+		move := Move{From: int8(i), To: int8(index), Capture: false}
+		possible_moves = append(possible_moves, move)
+		index++
+	}
+	// left
+	index = int(i) - 1
+	for index >= 0 {
+		capture := false
+		if own_occupancy&(0b1<<index) > 0 {
+			break
+		}
+		if opponent_occupancy&(0b1<<index) > 0 {
+			capture = true
+		}
+		if index%int(row_length_lac) == 0 {
+			move := Move{From: int8(i), To: int8(index), Capture: capture}
+			possible_moves = append(possible_moves, move)
+			break
+		}
+		move := Move{From: int8(i), To: int8(index), Capture: false}
+		possible_moves = append(possible_moves, move)
+		index--
+	}
+	return possible_moves
+}
+
+func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool) []Move {
+	possible_moves := []Move{}
+	own_occupancy := l.white_occupancy
+	opponent_occupancy := l.black_occupancy
+	if !white_to_play {
+		own_occupancy = l.black_occupancy
+		opponent_occupancy = l.white_occupancy
+	}
+	// up right
+	index := int(i + 7)
+	for index < int(no_fields_lac) && !(i%row_length_lac == 5) {
+		capture := false
+		if own_occupancy&(0b1<<index) > 0 {
+			break
+		}
+		if int(opponent_occupancy)&(0b1<<index) > 0 {
+			capture = true
+		}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
+		possible_moves = append(possible_moves, move)
+		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
+			break
+		}
+		index += 7
+	}
+	// down right
+	index = int(i) - 5
+	for index >= 0 && !(i%row_length_lac == 5) {
+		capture := false
+		if own_occupancy&(0b1<<index) > 0 {
+			break
+		}
+		if int(opponent_occupancy)&(0b1<<index) > 0 {
+			capture = true
+		}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
+		possible_moves = append(possible_moves, move)
+		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
+			break
+		}
+		index -= 5
+	}
+	// down left
+	index = int(i) - 7
+	for index >= 0 && !(i%row_length_lac == 0) {
+		capture := false
+		if int(own_occupancy)&(0b1<<index) > 0 {
+			break
+		}
+		if int(opponent_occupancy)&(0b1<<index) > 0 {
+			capture = true
+		}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
+		possible_moves = append(possible_moves, move)
+		if index%int(row_length_lac) == 0 || capture {
+			break
+		}
+		index -= 7
+	}
+	// up left
+	index = int(i) + 5
+	for index < int(no_fields_lac) && !(i%row_length_lac == 0) {
+		capture := false
+		if int(own_occupancy)&(0b1<<index) > 0 {
+			break
+		}
+		if int(opponent_occupancy)&(0b1<<index) > 0 {
+			capture = true
+		}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
+		possible_moves = append(possible_moves, move)
+		if index%int(row_length_lac) == 0 || capture {
+			break
+		}
+		index += 5
 	}
 	return possible_moves
 }
@@ -490,33 +496,38 @@ func (l *LosAlamosChess) Heuristic() float64 {
 
 func (l *LosAlamosChess) String() string {
 	field_string := ""
+	row_string := ""
 	for i := int(row_length_lac*row_length_lac) - 1; i >= 0; i-- {
 		field_mask := uint(0b1 << i)
 		if l.white_rooks&field_mask > 0 {
-			field_string += "R "
+			row_string = "R " + row_string
 		} else if l.white_knights&field_mask > 0 {
-			field_string += "N "
+			row_string = "N " + row_string
 		} else if l.white_queen&field_mask > 0 {
-			field_string += "Q "
+			row_string = "Q " + row_string
 		} else if l.white_king&field_mask > 0 {
-			field_string += "K "
+			row_string = "K " + row_string
 		} else if l.white_pawns&field_mask > 0 {
-			field_string += "P "
+			row_string = "P " + row_string
 		} else if l.black_rooks&field_mask > 0 {
-			field_string += "r "
+			row_string = "r " + row_string
 		} else if l.black_knights&field_mask > 0 {
-			field_string += "n "
+			row_string = "n " + row_string
 		} else if l.black_queen&field_mask > 0 {
-			field_string += "q "
+			row_string = "q " + row_string
 		} else if l.black_king&field_mask > 0 {
-			field_string += "k "
+			row_string = "k " + row_string
 		} else if l.black_pawns&field_mask > 0 {
-			field_string += "p "
+			row_string = "p " + row_string
 		} else {
-			field_string += "0 "
+			row_string = "0 " + row_string
 		}
 		if i%int(row_length_lac) == 0 && i != 0 {
-			field_string += "\n"
+			field_string += row_string + "\n"
+			row_string = ""
+		}
+		if i == 0 {
+			field_string += row_string
 		}
 	}
 	return field_string

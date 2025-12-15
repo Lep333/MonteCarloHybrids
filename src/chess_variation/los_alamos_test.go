@@ -22,8 +22,12 @@ func TestLosAlamosInitGame(t *testing.T) {
 		t.Errorf("Knight Bitboards are not correctly initialized!")
 	}
 
-	if game.white_king != 0b000100 || game.black_king != 0b000100<<(5*row_length_lac) {
+	if game.white_king != 0b001000 || game.black_king != 0b001000<<(5*row_length_lac) {
 		t.Errorf("King Bitboards are not correctly initialized!")
+	}
+
+	if game.white_queen != 0b000100 || game.black_queen != 0b000100<<(5*row_length_lac) {
+		t.Errorf("Queen Bitboards are not correctly initialized!")
 	}
 }
 
@@ -123,5 +127,101 @@ func TestLosAlamosPossibleMoves(t *testing.T) {
 	if possible_moves != starting_move_count {
 		t.Errorf("There should be %v possible moves, got %v",
 			9, possible_moves)
+	}
+}
+
+func TestLosAlamosPossibleMovesRook(t *testing.T) {
+	no_expected_moves := 10
+	game := LosAlamosChess{white_rooks: 1, whiteToPlay: true}
+	possible_moves := game.PossibleMoves()
+	no_actual_moves := len(possible_moves)
+
+	if no_actual_moves != no_expected_moves {
+		t.Errorf("Expected %v moves, got %v", no_expected_moves, no_actual_moves)
+	}
+
+	no_expected_moves = 8
+	game = LosAlamosChess{white_rooks: 1 << 14, black_occupancy: 1 << 20, whiteToPlay: true}
+	possible_moves = game.PossibleMoves()
+	no_actual_moves = len(possible_moves)
+
+	if no_actual_moves != no_expected_moves {
+		t.Errorf("Expected %v moves, got %v", no_expected_moves, no_actual_moves)
+	}
+}
+
+func TestLosAlamosPossibleMovesKnight(t *testing.T) {
+	no_expected_moves := 3
+	game := LosAlamosChess{}
+	game.InitGame()
+	game.white_pawns = 0
+	game.white_knights = 2
+	game.white_rooks = 0
+	game.white_king = 0
+	game.white_queen = 0
+	game.set_occupancy_boards()
+	possible_moves := game.PossibleMoves()
+	no_actual_moves := len(possible_moves)
+
+	if no_actual_moves != no_expected_moves {
+		t.Errorf("Expected %v moves, got %v", no_expected_moves, no_actual_moves)
+	}
+}
+
+func TestLosAlamosPossibleMovesQueen(t *testing.T) {
+	no_expected_moves := 17
+	game := LosAlamosChess{}
+	game.InitGame()
+	game.white_pawns = 0
+	game.white_knights = 0
+	game.white_rooks = 0
+	game.white_king = 0
+	game.white_queen = 1 << 14
+	game.set_occupancy_boards()
+	possible_moves := game.PossibleMoves()
+	no_actual_moves := len(possible_moves)
+
+	if no_actual_moves != no_expected_moves {
+		t.Errorf("Expected %v moves, got %v", no_expected_moves, no_actual_moves)
+	}
+
+	game.black_pawns = 1 << 19
+	game.white_pawns = 1 << 8
+	game.set_occupancy_boards()
+	no_expected_moves = 16
+	possible_moves = game.PossibleMoves()
+	no_actual_moves = len(possible_moves)
+
+	if no_actual_moves != no_expected_moves {
+		t.Errorf("Expected %v moves, got %v", no_expected_moves, no_actual_moves)
+	}
+}
+
+func TestLosAlamosPossibleMovesKing(t *testing.T) {
+	no_expected_moves := 8
+	game := LosAlamosChess{}
+	game.InitGame()
+	game.white_pawns = 0
+	game.white_knights = 0
+	game.white_rooks = 0
+	game.white_king = 1 << 14
+	game.white_queen = 0
+	game.set_occupancy_boards()
+	possible_moves := game.PossibleMoves()
+	no_actual_moves := len(possible_moves)
+
+	if no_actual_moves != no_expected_moves {
+		t.Errorf("Expected %v moves, got %v", no_expected_moves, no_actual_moves)
+	}
+
+	game.black_pawns = 1 << 19
+	game.white_pawns = 1 << 8
+	game.set_occupancy_boards()
+	no_expected_moves = 7
+	possible_moves = game.PossibleMoves()
+	no_actual_moves = len(possible_moves)
+
+	if no_actual_moves != no_expected_moves {
+		t.Errorf("Expected %v moves, got %v", no_expected_moves, no_actual_moves)
 	}
 }
