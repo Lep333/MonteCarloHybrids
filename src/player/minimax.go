@@ -12,8 +12,7 @@ func Minimax(s chess_variation.ChessVariation, max bool, depth int, depth_limit 
 	game_over, _ := s.GameOver()
 	if depth == depth_limit || game_over {
 		empty_move := chess_variation.Move{}
-		println("oink")
-		return empty_move, -s.Heuristic()
+		return empty_move, -s.Heuristic(true) // TODO: change arg
 	}
 	for _, move := range s.PossibleMoves() {
 		new_s := s.ExecuteMove(move)

@@ -6,6 +6,10 @@ import (
 
 type GreedyCaspi struct{}
 
+func (g *GreedyCaspi) ViewFunc(board chess.ChessVariation) chess.ChessVariation {
+	return board
+}
+
 func (g *GreedyCaspi) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
 	possible_moves := board.PossibleMoves()
 	var captures []chess.Move

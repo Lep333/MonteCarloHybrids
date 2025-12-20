@@ -33,6 +33,8 @@ func (l *LosAlamosChess) InitGame() {
 	l.number_of_moves = 0
 	l.white_pawns = 0b111111000000
 	l.black_pawns = 0b111111000000 << (row_length_lac * 3)
+	l.white_pawns_moves = [no_fields_lac]uint{}
+	l.black_pawns_moves = [no_fields_lac]uint{}
 	l.white_pawns_capture = [no_fields_lac]uint{}
 	l.black_pawns_capture = [no_fields_lac]uint{}
 	l.white_rooks = 0b100001
@@ -44,6 +46,7 @@ func (l *LosAlamosChess) InitGame() {
 	l.white_queen = 0b00100
 	l.black_queen = l.white_queen << (row_length_lac * 5)
 	l.knights_moves = [no_fields_lac]uint{}
+	l.king_moves = [no_fields_lac]uint{}
 
 	for i := uint(0); i < no_fields_lac; i++ {
 		l.init_pawns(i)
@@ -117,13 +120,13 @@ func (l *LosAlamosChess) init_knights(i uint) {
 func (l *LosAlamosChess) init_kings(i uint) {
 	col := i % row_length_lac
 	row := i / row_length_lac
-	// TODO: move possible moves in to match bit in bitboard
+
 	// up
 	if row < 5 {
 		l.king_moves[i] += 0b1 << (i + row_length_lac)
 	}
 	// up right
-	if row < 5 || col < 5 {
+	if row < 5 && col < 5 {
 		l.king_moves[i] += 0b1 << (i + row_length_lac + 1)
 	}
 	// right
@@ -131,7 +134,7 @@ func (l *LosAlamosChess) init_kings(i uint) {
 		l.king_moves[i] += 0b1 << (i + 1)
 	}
 	// right down
-	if row > 0 || col < 5 {
+	if row > 0 && col < 5 {
 		l.king_moves[i] += 0b1 << (i - row_length_lac + 1)
 	}
 	// down
@@ -139,7 +142,7 @@ func (l *LosAlamosChess) init_kings(i uint) {
 		l.king_moves[i] += 0b1 << (i - row_length_lac)
 	}
 	// down left
-	if row > 0 || col > 0 {
+	if row > 0 && col > 0 {
 		l.king_moves[i] += 0b1 << (i - row_length_lac - 1)
 	}
 	// left
@@ -242,11 +245,14 @@ func (l *LosAlamosChess) move_bitboard_to_moves(start uint, move_bitboard uint) 
 	for i := uint(0); i < no_fields_lac; i++ {
 		if move_bitboard&(0b1<<i) > 0 {
 			capture := false
-			if l.white_occupancy&l.black_occupancy&(0b1<<i) > 0 {
+			if (l.white_occupancy|l.black_occupancy)&(0b1<<i) > 0 {
 				capture = true
 			}
 			move := Move{From: int8(start), To: int8(i), Capture: capture}
 			possible_moves = append(possible_moves, move)
+			if move.From == 33 && move.To == 35 {
+				print("jo?")
+			}
 		}
 	}
 	return possible_moves
@@ -263,7 +269,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 
 	// up
 	index := int(i + row_length_lac)
-	for index < int(no_fields_lac) {
+	for index < int(no_fields_lac) && !(i/row_length_lac == row_length_lac-1) {
 		if own_occupancy&(0b1<<index) > 0 {
 			break
 		}
@@ -278,7 +284,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 	}
 	// down
 	index = int(i) - int(row_length_lac)
-	for index >= 0 {
+	for index >= 0 && !(i/row_length_lac == 0) {
 		if own_occupancy&(0b1<<index) > 0 {
 			break
 		}
@@ -293,7 +299,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 	}
 	// right
 	index = int(i) + 1
-	for index < int(no_fields_lac) {
+	for index < int(no_fields_lac) && !(i%row_length_lac == 5) {
 		capture := false
 		if own_occupancy&(0b1<<index) > 0 {
 			break
@@ -312,7 +318,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 	}
 	// left
 	index = int(i) - 1
-	for index >= 0 {
+	for index >= 0 && !(i%row_length_lac == 0) {
 		capture := false
 		if own_occupancy&(0b1<<index) > 0 {
 			break
@@ -473,8 +479,34 @@ func (l *LosAlamosChess) set_occupancy_boards() {
 }
 
 func (l *LosAlamosChess) CreateView() ChessVariation {
-	// TODO: implement!
-	return l.ReturnBoard()
+	copy := *l
+	moves := l.PossibleMoves()
+	vision := uint(0)
+	for _, move := range moves {
+		vision |= (1 << move.To)
+	}
+	if l.whiteToPlay {
+		field_in_front_of_pawns := l.white_pawns << row_length_lac
+		vision |= l.white_pawns | l.white_rooks | l.white_knights |
+			l.white_queen | l.white_king | field_in_front_of_pawns
+	} else {
+		field_in_front_of_pawns := l.black_pawns >> row_length_lac
+		vision |= l.black_pawns | l.black_rooks | l.black_knights |
+			l.black_queen | l.black_king | field_in_front_of_pawns
+	}
+	copy.white_pawns &= vision
+	copy.white_rooks &= vision
+	copy.white_knights &= vision
+	copy.white_queen &= vision
+	copy.white_king &= vision
+	copy.black_pawns &= vision
+	copy.black_rooks &= vision
+	copy.black_knights &= vision
+	copy.black_queen &= vision
+	copy.black_king &= vision
+	copy.set_occupancy_boards()
+
+	return &copy
 }
 
 func (l *LosAlamosChess) GameOver() (bool, int) {
@@ -489,7 +521,7 @@ func (l *LosAlamosChess) GameOver() (bool, int) {
 	return false, 0
 }
 
-func (l *LosAlamosChess) Heuristic() float64 {
+func (l *LosAlamosChess) Heuristic(white bool) float64 {
 	// TODO: implement!
 	return 0.0
 }

@@ -146,3 +146,29 @@ func TestString(t *testing.T) {
 	game.InitGame()
 	fmt.Printf("%v", &game)
 }
+
+func TestHeuristic(t *testing.T) {
+	game := DarkPawnChess{}
+	game.InitGame()
+
+	expected := 0.0
+	evaluation := game.Heuristic(true)
+	if evaluation != expected {
+		t.Errorf("Evaluation should be %v, but got %v", expected, evaluation)
+	}
+	game.white_pawns -= 1 << 3
+	game.white_pawns += 1 << 8
+	expected = 0.2
+	evaluation = game.Heuristic(true)
+	if evaluation != expected {
+		t.Errorf("Evaluation should be %v, but got %v", expected, evaluation)
+	}
+
+	game.black_pawns -= 1 << 23
+	game.black_pawns += 1 << 18
+	expected = 0.0
+	evaluation = game.Heuristic(false)
+	if evaluation != expected {
+		t.Errorf("Evaluation should be %v, but got %v", expected, evaluation)
+	}
+}

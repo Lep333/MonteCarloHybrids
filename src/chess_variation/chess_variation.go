@@ -15,6 +15,6 @@ type ChessVariation interface {
 	ExecuteMove(move Move) ChessVariation
 	CreateView() ChessVariation
 	GameOver() (bool, int)
-	Heuristic() float64
+	Heuristic(white bool) float64
 	String() string
 }

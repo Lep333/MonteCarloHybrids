@@ -5,6 +5,7 @@ import (
 )
 
 type Player interface {
+	ViewFunc(board chess.ChessVariation) chess.ChessVariation
 	GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	String() string
 }

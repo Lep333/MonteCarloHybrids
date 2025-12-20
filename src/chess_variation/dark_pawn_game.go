@@ -239,30 +239,34 @@ func (d *DarkPawnChess) CreateView() ChessVariation {
 	return &copy
 }
 
-func (d *DarkPawnChess) Heuristic() float64 {
+func (d *DarkPawnChess) Heuristic(white bool) float64 {
 	value := 0.0
 	no_white_pawns := 0
 	no_black_pawns := 0
 	white_coverage := 0
 	black_coverage := 0
-	round_no := d.GetNumberOfMoves()
-	white_to_play := round_no%2 == 0
-	for i := uint(0); i < row_length_dpc*row_length_dpc; i++ {
-		if (d.black_pawns >> i & 0b1) == 1 {
+	for i := uint(0); i < no_fields_dpc; i++ {
+		col := i % row_length_dpc
+		row := i / row_length_dpc
+		if (d.black_pawns>>i)&0b1 == 1 {
 			no_black_pawns++
-			if d.white_pawns&(i+row_length_dpc+1) == 1 {
+			// up right
+			if row < row_length_dpc-1 && col < row_length_dpc-1 && d.black_pawns&(1<<i+row_length_dpc+1) > 0 {
 				black_coverage++
 			}
-			if d.white_pawns&(i+row_length_dpc-1) == 1 {
+			// up left
+			if row < row_length_dpc-1 && col > 0 && d.black_pawns&(1<<i+row_length_dpc-1) > 0 {
 				black_coverage++
 			}
 		}
-		if (d.white_pawns >> i & 0b1) == 1 {
+		if (d.white_pawns>>i)&0b1 == 1 {
 			no_white_pawns++
-			if d.white_pawns&(i-row_length_dpc+1) == 1 {
+			// down right
+			if row > 0 && col < row_length_dpc-1 && d.white_pawns&(1<<i-row_length_dpc+1) > 0 {
 				white_coverage++
 			}
-			if d.white_pawns&(i-row_length_dpc-1) == 1 {
+			// down left
+			if row > 0 && col > 0 && d.white_pawns&(1<<i-row_length_dpc-1) > 0 {
 				white_coverage++
 			}
 		}
@@ -270,22 +274,21 @@ func (d *DarkPawnChess) Heuristic() float64 {
 
 	var material_advantage float64
 	var coverage float64
-	if white_to_play {
-		material_advantage = float64(no_white_pawns) / float64(no_white_pawns+no_black_pawns)
+	if white {
+		material_advantage = float64(no_white_pawns-no_black_pawns) / float64(row_length_dpc)
 		if white_coverage+black_coverage == 0 {
-			coverage = 1
+			coverage = 0
 		} else {
-			coverage = float64(white_coverage / (white_coverage + black_coverage))
+			coverage = float64(white_coverage-black_coverage) / float64(row_length_dpc)
 		}
 	} else {
-		material_advantage = float64(no_black_pawns) / float64(no_white_pawns+no_black_pawns)
+		material_advantage = float64(no_black_pawns-no_white_pawns) / float64(row_length_dpc)
 		if white_coverage+black_coverage == 0 {
-			coverage = 1
+			coverage = 0
 		} else {
-			coverage = float64(black_coverage / (white_coverage + black_coverage))
+			coverage = float64(black_coverage-white_coverage) / float64(row_length_dpc)
 		}
 	}
-
 	value = (material_advantage + coverage) / 2
 	return value
 }

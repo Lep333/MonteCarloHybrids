@@ -12,6 +12,7 @@ type POMCP struct {
 	Started_playing bool
 	Last_move       chess.Move
 	Settings        Settings
+	Rollouts        int
 }
 
 type Combined_Key struct {
@@ -41,6 +42,10 @@ type Node struct {
 	beliefs     map[string]chess.ChessVariation // B
 }
 
+func (p *POMCP) ViewFunc(board chess.ChessVariation) chess.ChessVariation {
+	return board.CreateView()
+}
+
 func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
 	if board.GetNumberOfMoves() < 2 {
 		p.Root = nil
@@ -48,8 +53,9 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	}
 	p.Init_pomcp(board, whiteToPlay)
 	prune_tree_and_update_beliefs(p, board)
+	visits_before := p.Root.visits
 	selected_move := p.search(p.Root)
-	println("visits: ", p.Root.visits)
+	p.Rollouts = p.Root.visits - visits_before
 	p.Last_move = selected_move
 	return selected_move
 }
@@ -110,7 +116,7 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 
 func (p *POMCP) search(h *Node) chess.Move {
 	start_time := time.Now()
-	// for i := 0; i < 20000; i++ {
+	// for i := 0; i < 5000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
 		s := random_belief(h.beliefs)
 		if len(h.children) == 0 {
@@ -156,10 +162,10 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int) float64 {
 		return 0
 	}
 	// TODO: termination
-	termination, val := p.Settings.Termination_Func(s, float64(depth), p.Settings.Termination_func_param)
-	if termination {
-		return val
-	}
+	// termination, val := p.Settings.Termination_Func(s, float64(depth), p.Settings.Termination_func_param)
+	// if termination {
+	// 	return val
+	// }
 	// TODO: rollout
 	new_s := p.state_transition(s)
 	game_over, result := new_s.GameOver()
@@ -216,7 +222,11 @@ func get_best_move(h *Node) chess.Move {
 	best_action_value := math.Inf(-1)
 	for _, child := range h.children {
 		if val, ok := accumulated_action[child.move]; ok {
-			accumulated_action[child.move] = [2]float64{(val[0]*val[1] + float64(child.visits)*child.value) / (val[1] + float64(child.visits)), val[1] + float64(child.visits)}
+			visits := float64(child.visits)
+			if child.visits == 0 {
+				visits = 1
+			}
+			accumulated_action[child.move] = [2]float64{(val[0]*val[1] + float64(child.visits)*child.value) / (val[1] + visits), val[1] + float64(child.visits)}
 		} else {
 			accumulated_action[child.move] = [2]float64{child.value, float64(child.visits)}
 		}
