@@ -37,7 +37,7 @@ func main() {
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	time_termination := []int{1000, 2000, 5000}
+	time_termination := []int{5000}
 	c_values := []float64{1, 2, 5, 10}
 	rollout_capture := []float64{0.1, 0.3, 0.5, 0.7, 0.9}
 	for _, time_limit := range time_termination {
