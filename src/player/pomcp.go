@@ -21,15 +21,15 @@ type Combined_Key struct {
 }
 
 type Settings struct {
-	Termination_parameter  int
-	Gamma                  float64
-	Epsilon                float64
-	Ucb_c                  float64
-	Capture_reward         float64
-	Rollout_capture        float64
-	Selection_Func         func() chess.Move
-	Termination_Func       func(chess.ChessVariation, float64, float64) (bool, float64)
-	Termination_func_param float64
+	Termination_parameter     int
+	Gamma                     float64
+	Epsilon                   float64
+	Ucb_c                     float64
+	Rollout_capture           float64
+	Termination_func_param    float64
+	POMCP_name                string
+	Rollout_selection         SelectionHybrid
+	Early_playout_termination EarlyTermination
 }
 
 type Node struct {
@@ -116,7 +116,7 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 
 func (p *POMCP) search(h *Node) chess.Move {
 	start_time := time.Now()
-	// for i := 0; i < 5000; i++ {
+	// for i := 0; i < 10000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
 		s := random_belief(h.beliefs)
 		if len(h.children) == 0 {
@@ -161,13 +161,24 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int) float64 {
 	if math.Pow(p.Settings.Gamma, float64(depth)) < p.Settings.Epsilon {
 		return 0
 	}
-	// TODO: termination
-	// termination, val := p.Settings.Termination_Func(s, float64(depth), p.Settings.Termination_func_param)
-	// if termination {
-	// 	return val
-	// }
-	// TODO: rollout
-	new_s := p.state_transition(s)
+
+	// early playout termination?
+	if p.Settings.Early_playout_termination != nil {
+		termination, value := p.Settings.Early_playout_termination.
+			EarlyPlayoutTermination(s, float64(depth))
+		if termination {
+			return value
+		}
+	}
+
+	var new_s chess.ChessVariation
+	if p.Settings.Rollout_selection != nil {
+		move := p.Settings.Rollout_selection.Select(s)
+		new_s = s.ExecuteMove(move)
+	} else {
+		new_s = p.state_transition(s)
+	}
+
 	game_over, result := new_s.GameOver()
 	if game_over {
 		if !p.Started_playing {
@@ -329,6 +340,10 @@ func (p *POMCP) get_most_promising_action_by_ucb(h *Node) chess.Move {
 	return max_child.move
 }
 
-func (r *POMCP) String() string {
-	return "POMCP"
+func (p *POMCP) String() string {
+	if p.Settings.POMCP_name == "" {
+		return "POMCP"
+	} else {
+		return p.Settings.POMCP_name
+	}
 }

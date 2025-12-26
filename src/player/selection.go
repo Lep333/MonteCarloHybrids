@@ -11,7 +11,16 @@ type MoveScore struct {
 	score float64
 }
 
-func Corrective(s chess_variation.ChessVariation) chess_variation.Move {
+type SelectionHybrid interface {
+	Select(s chess_variation.ChessVariation) chess_variation.Move
+}
+
+type CorrectiveSelection struct {
+	Bound   float64
+	Epsilon float64
+}
+
+func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	white := true
 	if s.GetNumberOfMoves()%2 == 1 {
 		white = false
@@ -22,16 +31,14 @@ func Corrective(s chess_variation.ChessVariation) chess_variation.Move {
 		return chess_variation.Move{}
 	}
 	score_sum := 0.0
-	bound := 0.95 // should be needed to be a win
-	epsilon := 0.0095
 	score := 0.0
 	var move_scores []MoveScore
 	for _, move := range moves {
 		value := s.ExecuteMove(move).Heuristic(white)
-		if value > bound {
+		if value > c.Bound {
 			return move
 		} else if value <= default_value {
-			score = epsilon
+			score = c.Epsilon
 		} else {
 			score = value
 		}
@@ -48,9 +55,12 @@ func Corrective(s chess_variation.ChessVariation) chess_variation.Move {
 	return moves[len(moves)-1]
 }
 
+type GreedySelection struct {
+	Epsilon float64
+}
+
 // selects a move that has the best score of: heuristic or selects with x% a rand move
-func GreedyHybrid(s chess_variation.ChessVariation) chess_variation.Move {
-	rand_move_probability := 0.2
+func (g *GreedySelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	max_score := math.Inf(-1)
 	var best_move chess_variation.Move
 	possible_moves := s.PossibleMoves()
@@ -59,7 +69,7 @@ func GreedyHybrid(s chess_variation.ChessVariation) chess_variation.Move {
 		return chess_variation.Move{}
 	}
 
-	if rand.Float64() < rand_move_probability {
+	if rand.Float64() < g.Epsilon {
 		return possible_moves[rand.Intn(len(possible_moves))]
 	}
 
@@ -78,18 +88,30 @@ func GreedyHybrid(s chess_variation.ChessVariation) chess_variation.Move {
 	return best_move
 }
 
+// TODO: mixed
+
+type EarlyTermination interface {
+	EarlyPlayoutTermination(s chess_variation.ChessVariation,
+		depth float64) (bool, float64)
+}
+
+type EarlyPlayoutTerminationStruct struct {
+	Max_depth float64
+}
+
 // returns heuristic of best move
-func Early_playout_termination(s chess_variation.ChessVariation, depth float64, max_depth float64) (bool, float64) {
+func (e *EarlyPlayoutTerminationStruct) EarlyPlayoutTermination(
+	s chess_variation.ChessVariation,
+	depth float64) (bool, float64) {
 	white := true
 	if s.GetNumberOfMoves()%2 == 1 {
 		white = false
 	}
 
 	max_score := math.Inf(-1)
-	if depth < max_depth {
+	if depth < e.Max_depth {
 		return false, 0.0
-	}
-	if depth >= max_depth {
+	} else {
 		for _, move := range s.PossibleMoves() {
 			new_s := s.ExecuteMove(move)
 			score := new_s.Heuristic(white)
