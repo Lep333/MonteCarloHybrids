@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"monte_carlo_hybrids/chess_variation"
 	"monte_carlo_hybrids/player"
 	"monte_carlo_hybrids/server"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -14,55 +16,49 @@ func main() {
 		Termination_parameter:     1000,
 		Gamma:                     0.95,
 		Epsilon:                   0.005,
-		Ucb_c:                     5,
-		Rollout_capture:           0.9,
-		Rollout_selection:         &player.GreedySelection{},
+		Ucb_c:                     10,
+		Rollout_capture:           0,
+		Selection_hybrid:          nil,
+		Rollout_selection:         &player.MCTS_with_informed_rollouts{},
 		Early_playout_termination: nil,
-		POMCP_name:                "POMCP-Greedy",
+		POMCP_name:                "POMCP-IR",
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
 		Gamma:                 0.95,
 		Epsilon:               0.005,
-		Ucb_c:                 5,
-		Rollout_capture:       0.9,
+		Ucb_c:                 10,
+		Rollout_capture:       0,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	time_termination := []int{1000}
-	c_values := []float64{5}
-	epsilon := []float64{0, 0.2, 0.4, 0.6, 0.8}
-	for _, time_limit := range time_termination {
-		for _, c := range c_values {
-			for _, epsi := range epsilon {
-				tune_settings.Ucb_c = c
-				tune_settings.Termination_parameter = time_limit
-				// tune_settings.Rollout_capture = roll_cap
-				tune_settings.Rollout_selection = &player.
-					GreedySelection{Epsilon: epsi}
-				player1 = &player.POMCP{
-					Root:            nil,
-					Started_playing: false,
-					Last_move:       chess_variation.Move{},
-					Settings:        default_settings,
+	epsis := []float64{0.1, 0.5, 0.9}
+	depths := []int{1, 2, 3}
+	for _, epsi := range epsis {
+		for _, depth := range depths {
+			tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{Search_depth: depth, Epsilon: epsi}
+			player1 = &player.POMCP{
+				Root:            nil,
+				Started_playing: false,
+				Last_move:       chess_variation.Move{},
+				Settings:        default_settings,
+			}
+			player2 = &player.POMCP{
+				Root:            nil,
+				Started_playing: false,
+				Last_move:       chess_variation.Move{},
+				Settings:        tune_settings,
+			}
+			iterations := 200
+			for i := 0; i < iterations; i++ {
+				game := chess_variation.DarkPawnChess{}
+				if i == int(iterations/2) {
+					temp := player1
+					player1 = player2
+					player2 = temp
 				}
-				player2 = &player.POMCP{
-					Root:            nil,
-					Started_playing: false,
-					Last_move:       chess_variation.Move{},
-					Settings:        tune_settings,
-				}
-				iterations := 100
-				for i := 0; i < iterations; i++ {
-					game := chess_variation.DarkPawnChess{}
-					if i == int(iterations/2) {
-						temp := player1
-						player1 = player2
-						player2 = temp
-					}
-					winner, moves, rollouts := server.PlayGame(&game, player1, player2)
-					print_game_result(player1, player2, moves, winner, rollouts)
-				}
+				winner, moves, rollouts := server.PlayGame(&game, player1, player2)
+				print_game_result(player1, player2, moves, winner, rollouts)
 			}
 		}
 	}
@@ -87,13 +83,17 @@ func print_game_result(player1 player.Player, player2 player.Player,
 	if ok2 {
 		settings2 = pomcp2.Settings
 	}
+	settings1_string := DumpJSONOneLine(settings1)
+	settings2_string := DumpJSONOneLine(settings2)
+	settings1_string = strings.ReplaceAll(settings1_string, ",", " ")
+	settings2_string = strings.ReplaceAll(settings2_string, ",", " ")
 	result_string := fmt.Sprintf(
 		"%v, %v, %v, %+v, %+v, %v, %v \n",
 		player1.String(),
 		player2.String(),
 		winner,
-		settings1,
-		settings2,
+		settings1_string,
+		settings2_string,
 		moves,
 		rollouts,
 	)
@@ -112,4 +112,9 @@ func save_results(result string) {
 	if _, err := f.WriteString(result); err != nil {
 		panic(err)
 	}
+}
+
+func DumpJSONOneLine(v interface{}) string {
+	b, _ := json.Marshal(v)
+	return string(b)
 }

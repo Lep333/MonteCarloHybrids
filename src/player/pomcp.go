@@ -28,6 +28,7 @@ type Settings struct {
 	Rollout_capture           float64
 	Termination_func_param    float64
 	POMCP_name                string
+	Selection_hybrid          SelectionHybrid
 	Rollout_selection         SelectionHybrid
 	Early_playout_termination EarlyTermination
 }
@@ -136,7 +137,12 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 		// h.children = create_all_children(s, h)
 		return p.rollout(s, depth)
 	}
-	a := p.get_most_promising_action_by_ucb(h)
+	var a chess.Move
+	if p.Settings.Selection_hybrid != nil {
+		a = p.Settings.Selection_hybrid.Select(s)
+	} else {
+		a = p.get_most_promising_action_by_ucb(h)
+	}
 	o := s.ExecuteMove(a)
 	possible_moves := o.PossibleMoves()
 	if len(possible_moves) > 0 {

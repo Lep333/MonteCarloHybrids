@@ -1,4 +1,9 @@
 import re
+import matplotlib.pyplot as plt
+import numpy as np
+
+import matplotlib
+import matplotlib as mpl
 
 file_name = "results.csv"
 csv = ""
@@ -49,8 +54,11 @@ def main():
                 )
         else:
             result_dict[settings2] = ([0,0,0],black)
-    print(result_dict)
-    print_heatmap(result_dict)
+    # print(result_dict)
+    # print_heatmap(result_dict)
+
+    # print hybrids
+    print_hybrids(result_dict)
 
 def print_heatmap(result_dict: dict[list]):
     ucb_label = set()
@@ -68,12 +76,6 @@ def print_heatmap(result_dict: dict[list]):
     sorted_capture_label.sort(reverse=True)
 
     # modified from here: https://matplotlib.org/stable/gallery/images_contours_and_fields/image_annotated_heatmap.html
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    import matplotlib
-    import matplotlib as mpl
-
     heatmap = np.zeros((len(sorted_capture_label), len(sorted_ucb_label)))
     for key, val in result_dict.items():
         termination_param = float(re.search(r"Termination_parameter:([\d.]+)", key).group(1))
@@ -107,6 +109,83 @@ def print_heatmap(result_dict: dict[list]):
     fig.tight_layout()
     plt.savefig("winrate_heatmap_dark_pawn_game_1sec.png", dpi=300)
     plt.close()
+
+def print_hybrids(result_dict: dict[list]):
+    diagrams = [
+        (
+            "POMCP-UCB", r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)',
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "POMCP-Rollout-Capture",
+            r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)',
+            "Schlagpräfarenz-Hybrid Siegesrate",
+            "Schlagpräfarenz in %",
+        ),
+        (
+            "POMCP-Greedy",
+            r'\"Rollout_selection\":{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+            "Greedy-Hybrid Siegesrate",
+            "Zufallszug in %"
+        ),
+        (
+            "POMCP-Corrective",
+            r'\"Rollout_selection\":{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            "Korrektur-Hybrid Siegesrate",
+            "Grenzwert um Spiel als Gewonnen anzusehen"
+        ),
+        (
+            "POMCP-EPT",
+            r'\"Early_playout_termination\":{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
+            "Early-Playout-Termination-Hybrid Siegesrate",
+            "Abbruchstiefe"
+        ),
+        (
+            "POMCP-IR",
+            r'\"Rollout_selection"\:\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+            "Informierter Rollout Siegesrate",
+            "Abbruchstiefe"
+        ),
+        (
+            "POMCP-Evaluation-Cut-Off",
+            r'\"Early_playout_termination"\:\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)',
+            "Evaluation Cut Off Siegesrate",
+            "Abbruchs-Schwellwert"
+        ),
+        (
+            "POMCP-KBest",
+            r'\"Rollout_selection"\:\{\"K\":([0-9]+(?:\.[0-9]+)?)',
+            "Move Ordering & K-Best",
+            "k"
+        ),
+    ]
+
+    for name, reg, title, x_axis_label in diagrams:
+        x = []
+        y = []
+        for key, value in result_dict.items():
+            pomcp_name = re.search(r'POMCP_name"\s*:\s*"([^"]*)', key)
+            if pomcp_name and name == pomcp_name.group(1):
+                ucb_c = float(re.search(reg, key).group(1))
+                win_percentage = 100 * (value[0][0] + value[1][0]) / (sum(value[0]) + sum(value[1]))
+                print(name, ucb_c, win_percentage, value)
+                x.append(ucb_c)
+                y.append(win_percentage)
+    
+        x_label, y = zip(*sorted(zip(x, y)))
+        x = 0.5 + np.arange(len(y))
+        fig, ax = plt.subplots()
+        indices = np.arange(len(y))
+        ax.bar(indices, y, width=1, edgecolor="white", linewidth=0.7)
+        ax.set_xticks(indices)
+        ax.set_xticklabels(x_label)
+        ax.set_title(title)
+        ax.set_ylabel("Siegesrate in %")
+        ax.set_xlabel(x_axis_label)
+        fig.tight_layout()
+        plt.savefig(f"{name}.png", dpi=300)
+        plt.close()
 
 def sum_result(category: str, results: dict, line: list, field_no: int):
     if results[category].get(line[field_no]):
