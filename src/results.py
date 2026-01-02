@@ -159,6 +159,18 @@ def print_hybrids(result_dict: dict[list]):
             "Move Ordering & K-Best",
             "k"
         ),
+        (
+            "POMCP-Mixed",
+            r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            "Move Ordering & K-Best",
+            "k"
+        ),
+        (
+            "POMCP-IR",
+            r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            "POMCP with informed rollouts",
+            "hui"
+        ),
     ]
 
     for name, reg, title, x_axis_label in diagrams:
@@ -167,7 +179,9 @@ def print_hybrids(result_dict: dict[list]):
         for key, value in result_dict.items():
             pomcp_name = re.search(r'POMCP_name"\s*:\s*"([^"]*)', key)
             if pomcp_name and name == pomcp_name.group(1):
-                ucb_c = float(re.search(reg, key).group(1))
+                ucb_c = ""
+                if found := re.search(reg, key):
+                    ucb_c = float(found.group(1))
                 win_percentage = 100 * (value[0][0] + value[1][0]) / (sum(value[0]) + sum(value[1]))
                 print(name, ucb_c, win_percentage, value)
                 x.append(ucb_c)

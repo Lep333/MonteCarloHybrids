@@ -19,9 +19,9 @@ func main() {
 		Ucb_c:                     10,
 		Rollout_capture:           0,
 		Selection_hybrid:          nil,
-		Rollout_selection:         &player.MCTS_with_informed_rollouts{},
-		Early_playout_termination: nil,
-		POMCP_name:                "POMCP-IR",
+		Rollout_selection:         nil,
+		Early_playout_termination: &player.MCTS_with_informed_cutoffs{},
+		POMCP_name:                "DPC-POMCP-IC",
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
@@ -32,11 +32,13 @@ func main() {
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	epsis := []float64{0.1, 0.5, 0.9}
+	termi := []float64{2, 4, 6, 8}
 	depths := []int{1, 2, 3}
-	for _, epsi := range epsis {
+	for _, term := range termi {
 		for _, depth := range depths {
-			tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{Search_depth: depth, Epsilon: epsi}
+			tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
+				Max_depth: term, Search_depth: depth,
+			}
 			player1 = &player.POMCP{
 				Root:            nil,
 				Started_playing: false,

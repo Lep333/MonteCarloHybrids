@@ -166,7 +166,7 @@ type MCTS_with_informed_cutoffs struct {
 
 func (m *MCTS_with_informed_cutoffs) EarlyPlayoutTermination(
 	s chess_variation.ChessVariation, depth float64) (bool, float64) {
-	score := math.Inf(-1)
+	score := -1.0
 
 	if depth >= m.Max_depth {
 		_, score = Minimax(s, true, math.Inf(-1), math.Inf(1), 0, m.Search_depth)
