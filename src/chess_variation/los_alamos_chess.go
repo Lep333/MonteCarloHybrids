@@ -1,5 +1,7 @@
 package chess_variation
 
+import "math"
+
 const row_length_lac uint = 6
 const no_fields_lac uint = row_length_lac * row_length_lac
 const black_base_line_start_lac uint = row_length_dpc * (row_length_dpc - 1)
@@ -250,9 +252,6 @@ func (l *LosAlamosChess) move_bitboard_to_moves(start uint, move_bitboard uint) 
 			}
 			move := Move{From: int8(start), To: int8(i), Capture: capture}
 			possible_moves = append(possible_moves, move)
-			if move.From == 33 && move.To == 35 {
-				print("jo?")
-			}
 		}
 	}
 	return possible_moves
@@ -452,7 +451,12 @@ func (l *LosAlamosChess) ExecuteMove(move Move) ChessVariation {
 	} else if l.white_king&move_from_mask > 0 {
 		copy.white_king += -move_from_mask + move_to_mask
 	} else if l.white_pawns&move_from_mask > 0 {
-		copy.white_pawns += -move_from_mask + move_to_mask
+		if move_to_mask >= uint(math.Pow(2, 30)) {
+			copy.white_queen += move_to_mask
+			copy.white_pawns += -move_from_mask
+		} else {
+			copy.white_pawns += -move_from_mask + move_to_mask
+		}
 	} else if l.black_rooks&move_from_mask > 0 {
 		copy.black_rooks += -move_from_mask + move_to_mask
 	} else if l.black_knights&move_from_mask > 0 {
@@ -462,7 +466,12 @@ func (l *LosAlamosChess) ExecuteMove(move Move) ChessVariation {
 	} else if l.black_king&move_from_mask > 0 {
 		copy.black_king += -move_from_mask + move_to_mask
 	} else if l.black_pawns&move_from_mask > 0 {
-		copy.black_pawns += -move_from_mask + move_to_mask
+		if move_to_mask <= uint(math.Pow(2, 5)) {
+			copy.white_queen += move_to_mask
+			copy.black_pawns += -move_from_mask
+		} else {
+			copy.black_pawns += -move_from_mask + move_to_mask
+		}
 	}
 	copy.number_of_moves++
 	copy.whiteToPlay = !copy.whiteToPlay
@@ -518,6 +527,12 @@ func (l *LosAlamosChess) GameOver() (bool, int) {
 	if l.black_king == 0 {
 		return true, 1
 	}
+
+	max_moves := 100
+	if l.number_of_moves > max_moves {
+		return true, 0
+	}
+
 	return false, 0
 }
 

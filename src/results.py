@@ -4,6 +4,7 @@ import numpy as np
 
 import matplotlib
 import matplotlib as mpl
+from scipy.stats import binomtest
 
 file_name = "results.csv"
 csv = ""
@@ -81,7 +82,6 @@ def print_heatmap(result_dict: dict[list]):
         termination_param = float(re.search(r"Termination_parameter:([\d.]+)", key).group(1))
         ucb_c = int(re.search(r"Ucb_c:(\d+)", key).group(1))
         ucb_index = sorted_ucb_label.index(ucb_c)
-
         capture_reward = float(re.search(r"Rollout_capture:([\d.]+)", key).group(1))
         if capture_reward == 0 or termination_param != 1000:
             continue
@@ -162,11 +162,17 @@ def print_hybrids(result_dict: dict[list]):
         (
             "POMCP-Mixed",
             r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
-            "Move Ordering & K-Best",
+            "Mixed-Hybrid Siegesrate",
             "k"
         ),
         (
             "POMCP-IR",
+            r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            "POMCP with informed rollouts",
+            "hui"
+        ),
+        (
+            "DPC-POMCP-IC",
             r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
             "POMCP with informed rollouts",
             "hui"
@@ -176,22 +182,30 @@ def print_hybrids(result_dict: dict[list]):
     for name, reg, title, x_axis_label in diagrams:
         x = []
         y = []
+        e_low = []
+        e_high = []
         for key, value in result_dict.items():
             pomcp_name = re.search(r'POMCP_name"\s*:\s*"([^"]*)', key)
             if pomcp_name and name == pomcp_name.group(1):
                 ucb_c = ""
                 if found := re.search(reg, key):
                     ucb_c = float(found.group(1))
-                win_percentage = 100 * (value[0][0] + value[1][0]) / (sum(value[0]) + sum(value[1]))
+                player_wins = value[0][0] + value[1][0]
+                player_games = sum(value[0]) + sum(value[1])
+                win_percentage = 100 * player_wins / player_games
+                res = binomtest(player_wins, player_games)
+                ci = res.proportion_ci(1 - 0.05, method="wilson")
                 print(name, ucb_c, win_percentage, value)
                 x.append(ucb_c)
                 y.append(win_percentage)
+                e_low.append(ci.low)
+                e_high.append(ci.high)
     
-        x_label, y = zip(*sorted(zip(x, y)))
+        x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))
         x = 0.5 + np.arange(len(y))
         fig, ax = plt.subplots()
         indices = np.arange(len(y))
-        ax.bar(indices, y, width=1, edgecolor="white", linewidth=0.7)
+        ax.errorbar(indices, y, [e_low, e_high], fmt='o', linewidth=2, capsize=6)
         ax.set_xticks(indices)
         ax.set_xticklabels(x_label)
         ax.set_title(title)

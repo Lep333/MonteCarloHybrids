@@ -16,52 +16,48 @@ func main() {
 		Termination_parameter:     1000,
 		Gamma:                     0.95,
 		Epsilon:                   0.005,
-		Ucb_c:                     10,
+		Ucb_c:                     1,
 		Rollout_capture:           0,
+		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
-		Early_playout_termination: &player.MCTS_with_informed_cutoffs{},
-		POMCP_name:                "DPC-POMCP-IC",
+		Early_playout_termination: nil,
+		POMCP_name:                "LAC-POMCP-UCB",
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
 		Gamma:                 0.95,
 		Epsilon:               0.005,
-		Ucb_c:                 10,
+		Ucb_c:                 1,
 		Rollout_capture:       0,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	termi := []float64{2, 4, 6, 8}
-	depths := []int{1, 2, 3}
-	for _, term := range termi {
-		for _, depth := range depths {
-			tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
-				Max_depth: term, Search_depth: depth,
+	ucbcs := []float64{0.5, 1, 5, 10}
+	for _, ucb := range ucbcs {
+		tune_settings.Ucb_c = ucb
+		player1 = &player.POMCP{
+			Root:            nil,
+			Started_playing: false,
+			Last_move:       chess_variation.Move{},
+			Settings:        default_settings,
+		}
+		player2 = &player.POMCP{
+			Root:            nil,
+			Started_playing: false,
+			Last_move:       chess_variation.Move{},
+			Settings:        tune_settings,
+		}
+		iterations := 200
+		for i := 0; i < iterations; i++ {
+			game := chess_variation.LosAlamosChess{}
+			if i == int(iterations/2) {
+				temp := player1
+				player1 = player2
+				player2 = temp
 			}
-			player1 = &player.POMCP{
-				Root:            nil,
-				Started_playing: false,
-				Last_move:       chess_variation.Move{},
-				Settings:        default_settings,
-			}
-			player2 = &player.POMCP{
-				Root:            nil,
-				Started_playing: false,
-				Last_move:       chess_variation.Move{},
-				Settings:        tune_settings,
-			}
-			iterations := 200
-			for i := 0; i < iterations; i++ {
-				game := chess_variation.DarkPawnChess{}
-				if i == int(iterations/2) {
-					temp := player1
-					player1 = player2
-					player2 = temp
-				}
-				winner, moves, rollouts := server.PlayGame(&game, player1, player2)
-				print_game_result(player1, player2, moves, winner, rollouts)
-			}
+			winner, moves, rollouts := server.PlayGame(&game, player1, player2)
+			print_game_result(player1, player2, moves, winner, rollouts)
 		}
 	}
 	fmt.Printf("%v wins: %v \n", player1.String(), pomcp_wins)

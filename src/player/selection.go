@@ -143,8 +143,6 @@ func (e *EarlyPlayoutTerminationStruct) EarlyPlayoutTermination(
 	return true, max_score
 }
 
-// returns the next move in rollout phase
-// TODO: remove determinism?
 type MCTS_with_informed_rollouts struct {
 	Search_depth int
 	Epsilon      float64
@@ -178,10 +176,21 @@ func (m *MCTS_with_informed_cutoffs) EarlyPlayoutTermination(
 
 // inits nodes with Minimax results
 // Selection Phase
-func MCTS_with_informed_priors(new_node Node, s chess_variation.ChessVariation, weight int) {
-	_, score := Minimax(s, true, math.Inf(-1), math.Inf(1), 0, 4)
-	new_node.value = score * float64(weight)
-	new_node.visits = weight
+type PriorHybrid interface {
+	Prior(new_node *Node, s chess_variation.ChessVariation) float64
+}
+
+type InitPrior struct {
+	Weight       int
+	Search_depth int
+}
+
+// TODO: propagate visits back up top?
+func (p *InitPrior) Prior(new_node *Node, s chess_variation.ChessVariation) float64 {
+	_, score := Minimax(s, true, math.Inf(-1), math.Inf(1), 0, p.Search_depth)
+	new_node.value = score * float64(p.Weight)
+	new_node.visits = p.Weight
+	return new_node.value
 }
 
 type KBest struct {
