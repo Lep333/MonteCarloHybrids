@@ -113,7 +113,8 @@ def print_heatmap(result_dict: dict[list]):
 def print_hybrids(result_dict: dict[list]):
     diagrams = [
         (
-            "POMCP-UCB", r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)',
+            "POMCP-UCB",
+            r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)',
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
         ),
@@ -161,7 +162,10 @@ def print_hybrids(result_dict: dict[list]):
         ),
         (
             "POMCP-Mixed",
-            r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            [
+                r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'
+            ],
             "Mixed-Hybrid Siegesrate",
             "k"
         ),
@@ -176,6 +180,12 @@ def print_hybrids(result_dict: dict[list]):
             r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
             "POMCP with informed rollouts",
             "hui"
+        ),
+        (
+            "LAC-POMCP-UCB",
+            r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)',
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
         ),
     ]
 

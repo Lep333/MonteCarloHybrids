@@ -537,8 +537,100 @@ func (l *LosAlamosChess) GameOver() (bool, int) {
 }
 
 func (l *LosAlamosChess) Heuristic(white bool) float64 {
-	// TODO: implement!
-	return 0.0
+	value := 0.0
+	white_material := 0.0
+	black_material := 0.0
+	for i := 0; i < int(no_fields_lac); i++ {
+		if l.white_queen&(0b1<<i) > 0 {
+			white_material += 9
+		} else if l.white_rooks&(0b1<<i) > 0 {
+			white_material += 5
+		} else if l.white_knights&(0b1<<i) > 0 {
+			white_material += 3
+		} else if l.white_pawns&(0b1<<i) > 0 {
+			white_material += 1
+		} else if l.black_queen&(0b1<<i) > 0 {
+			black_material += 9
+		} else if l.black_rooks&(0b1<<i) > 0 {
+			black_material += 5
+		} else if l.black_knights&(0b1<<i) > 0 {
+			black_material += 3
+		} else if l.black_pawns&(0b1<<i) > 0 {
+			black_material += 1
+		}
+	}
+	white_mobility := 0
+	black_mobility := 0
+	if white {
+		white_mobility = len(l.PossibleMoves())
+		l.whiteToPlay = !l.whiteToPlay
+		black_mobility = len(l.PossibleMoves())
+	} else {
+		black_mobility = len(l.PossibleMoves())
+		l.whiteToPlay = !l.whiteToPlay
+		white_mobility = len(l.PossibleMoves())
+	}
+	avg_material := (white_material + black_material) / 2
+	value = (white_material - black_material + float64(l.pawn_structure()) + 0.1*float64(white_mobility-black_mobility)) / avg_material
+	value = math.Min(math.Min(value, -1), 1)
+	if !white {
+		value = -value
+	}
+	return value
+}
+
+// returns found doubled pawns as a sum of white and black pawns
+// where per doubled white pawn +1 and per black pawn -1
+func (l *LosAlamosChess) pawn_structure() int {
+	doubled_pawns := 0
+	isolated_pawns := 0
+	white_pawns_cols := make(map[int]bool)
+	black_pawns_cols := make(map[int]bool)
+	for col := 0; col < int(row_length_lac); col++ {
+		for field := col; field < int(no_fields_lac); field += int(row_length_lac) {
+			white_pawn_in_col := false
+			white_double_in_col := false
+			black_pawn_in_col := false
+			black_double_in_col := false
+			if field%int(row_length_lac) == 0 {
+				white_pawn_in_col = false
+				white_double_in_col = false
+				black_pawn_in_col = false
+				black_double_in_col = false
+			}
+			if l.white_pawns&(0b1<<field) > 0 {
+				white_pawns_cols[col] = true
+				if white_pawn_in_col && !white_double_in_col {
+					doubled_pawns++
+					white_double_in_col = true
+				}
+				white_pawn_in_col = true
+			}
+			if l.black_pawns&(0b1<<field) > 0 {
+				black_pawns_cols[col] = true
+				if black_pawn_in_col && !black_double_in_col {
+					doubled_pawns--
+					black_double_in_col = true
+				}
+				black_pawn_in_col = true
+			}
+		}
+	}
+	for key, _ := range white_pawns_cols {
+		_, left := white_pawns_cols[key-1]
+		_, right := white_pawns_cols[key+1]
+		if !left && !right {
+			isolated_pawns++
+		}
+	}
+	for key, _ := range black_pawns_cols {
+		_, left := black_pawns_cols[key-1]
+		_, right := black_pawns_cols[key+1]
+		if !left && !right {
+			isolated_pawns--
+		}
+	}
+	return doubled_pawns + isolated_pawns
 }
 
 func (l *LosAlamosChess) String() string {
