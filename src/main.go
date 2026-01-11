@@ -11,37 +11,33 @@ import (
 )
 
 func main() {
+	web_server()
 	var player1, player2 player.Player
 	tune_settings := player.Settings{
-		Termination_parameter:     1000,
+		Termination_parameter:     5000,
 		Gamma:                     0.95,
 		Epsilon:                   0.005,
 		Ucb_c:                     1,
-		Rollout_capture:           0,
+		Rollout_capture:           0.0,
 		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
 		Early_playout_termination: nil,
 		POMCP_name:                "LAC-POMCP-UCB",
 	}
-	default_settings := player.Settings{
-		Termination_parameter: 1000,
-		Gamma:                 0.95,
-		Epsilon:               0.005,
-		Ucb_c:                 1,
-		Rollout_capture:       0,
-	}
+	// default_settings := player.Settings{
+	// 	Termination_parameter: 1000,
+	// 	Gamma:                 0.95,
+	// 	Epsilon:               0.005,
+	// 	Ucb_c:                 1,
+	// 	Rollout_capture:       0,
+	// }
 	greedy_wins := 0
 	pomcp_wins := 0
-	ucbcs := []float64{0.5, 1, 5, 10}
+	ucbcs := []float64{1}
 	for _, ucb := range ucbcs {
 		tune_settings.Ucb_c = ucb
-		player1 = &player.POMCP{
-			Root:            nil,
-			Started_playing: false,
-			Last_move:       chess_variation.Move{},
-			Settings:        default_settings,
-		}
+		player1 = &player.HumanPlayer{}
 		player2 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,

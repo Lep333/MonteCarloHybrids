@@ -17,4 +17,5 @@ type ChessVariation interface {
 	GameOver() (bool, int)
 	Heuristic(white bool) float64
 	String() string
+	FENString() string
 }

@@ -310,6 +310,23 @@ func (d *DarkPawnChess) String() string {
 	return board
 }
 
+func (d *DarkPawnChess) FENString() string {
+	board := ""
+	for i := int(no_fields_dpc - 1); i >= 0; i-- {
+		if d.white_pawns&(0b1<<i) != 0 {
+			board += "w "
+		} else if d.black_pawns&(0b1<<i) != 0 {
+			board += "b "
+		} else {
+			board += "o "
+		}
+		if uint(i)%row_length_dpc == 0 {
+			board += "\n"
+		}
+	}
+	return board
+}
+
 func (d *DarkPawnChess) Set_Board(white_pawns uint, black_pawns uint, number_of_moves int, whiteToplay bool) {
 	d.white_pawns = white_pawns
 	d.black_pawns = black_pawns

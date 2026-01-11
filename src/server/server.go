@@ -21,12 +21,12 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (int, [
 			result = tmp_result
 			break
 		}
-		fmt.Printf("Move: %v \n", move)
-		fmt.Printf("%v", game)
+		//fmt.Printf("Move: %v \n", move)
+		//fmt.Printf("%v", game)
 		white_to_play := move%2 == 0
 		currPlayer = setCurrPlayer(move, player1, player2)
 		moves := game.PossibleMoves()
-		fmt.Printf("Possible moves: %v \n", moves)
+		//fmt.Printf("Possible moves: %v \n", moves)
 		if len(moves) == 0 {
 			fmt.Printf("No possible moves anymore! \n")
 			break

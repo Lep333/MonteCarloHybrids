@@ -1,6 +1,9 @@
 package chess_variation
 
-import "math"
+import (
+	"math"
+	"strconv"
+)
 
 const row_length_lac uint = 6
 const no_fields_lac uint = row_length_lac * row_length_lac
@@ -306,7 +309,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 		if opponent_occupancy&(0b1<<index) > 0 {
 			capture = true
 		}
-		if index%int(row_length_lac) == int(row_length_lac)-1 {
+		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
 			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			possible_moves = append(possible_moves, move)
 			break
@@ -325,7 +328,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 		if opponent_occupancy&(0b1<<index) > 0 {
 			capture = true
 		}
-		if index%int(row_length_lac) == 0 {
+		if index%int(row_length_lac) == 0 || capture {
 			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			possible_moves = append(possible_moves, move)
 			break
@@ -669,5 +672,56 @@ func (l *LosAlamosChess) String() string {
 			field_string += row_string
 		}
 	}
+	return field_string
+}
+
+func (l *LosAlamosChess) FENString() string {
+	field_string := ""
+	row_string := ""
+	empty_fields := 0
+	for i := int(row_length_lac*row_length_lac) - 1; i >= 0; i-- {
+		field_mask := uint(0b1 << i)
+		if (l.white_occupancy|l.black_occupancy)&field_mask > 0 && empty_fields > 0 {
+			row_string = strconv.Itoa(empty_fields) + row_string
+			empty_fields = 0
+		}
+		if l.white_rooks&field_mask > 0 {
+			row_string = "R" + row_string
+		} else if l.white_knights&field_mask > 0 {
+			row_string = "N" + row_string
+		} else if l.white_queen&field_mask > 0 {
+			row_string = "Q" + row_string
+		} else if l.white_king&field_mask > 0 {
+			row_string = "K" + row_string
+		} else if l.white_pawns&field_mask > 0 {
+			row_string = "P" + row_string
+		} else if l.black_rooks&field_mask > 0 {
+			row_string = "r" + row_string
+		} else if l.black_knights&field_mask > 0 {
+			row_string = "n" + row_string
+		} else if l.black_queen&field_mask > 0 {
+			row_string = "q" + row_string
+		} else if l.black_king&field_mask > 0 {
+			row_string = "k" + row_string
+		} else if l.black_pawns&field_mask > 0 {
+			row_string = "p" + row_string
+		} else {
+			empty_fields++
+		}
+		if i%int(row_length_lac) == 0 {
+			if empty_fields > 0 {
+				row_string = strconv.Itoa(empty_fields) + row_string
+				empty_fields = 0
+			}
+			if i != 0 {
+				field_string += row_string + "/"
+				row_string = ""
+			}
+		}
+		if i == 0 {
+			field_string += row_string
+		}
+	}
+	field_string += strconv.Itoa(empty_fields)
 	return field_string
 }

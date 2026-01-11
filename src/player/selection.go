@@ -89,8 +89,6 @@ func (g *GreedySelection) Select(s chess_variation.ChessVariation) chess_variati
 	return best_move
 }
 
-// TODO: mixed
-
 type EarlyTermination interface {
 	EarlyPlayoutTermination(s chess_variation.ChessVariation,
 		depth float64) (bool, float64)

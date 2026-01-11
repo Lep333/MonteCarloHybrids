@@ -114,49 +114,49 @@ def print_hybrids(result_dict: dict[list]):
     diagrams = [
         (
             "POMCP-UCB",
-            r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
         ),
         (
             "POMCP-Rollout-Capture",
-            r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
             "Schlagpräfarenz-Hybrid Siegesrate",
             "Schlagpräfarenz in %",
         ),
         (
             "POMCP-Greedy",
-            r'\"Rollout_selection\":{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Rollout_selection\":{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Greedy-Hybrid Siegesrate",
             "Zufallszug in %"
         ),
         (
             "POMCP-Corrective",
-            r'\"Rollout_selection\":{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Rollout_selection\":{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur-Hybrid Siegesrate",
             "Grenzwert um Spiel als Gewonnen anzusehen"
         ),
         (
             "POMCP-EPT",
-            r'\"Early_playout_termination\":{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Early_playout_termination\":{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
             "Early-Playout-Termination-Hybrid Siegesrate",
             "Abbruchstiefe"
         ),
         (
             "POMCP-IR",
-            r'\"Rollout_selection"\:\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Rollout_selection"\:\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)'],
             "Informierter Rollout Siegesrate",
             "Abbruchstiefe"
         ),
         (
             "POMCP-Evaluation-Cut-Off",
-            r'\"Early_playout_termination"\:\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Early_playout_termination"\:\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "Evaluation Cut Off Siegesrate",
             "Abbruchs-Schwellwert"
         ),
         (
             "POMCP-KBest",
-            r'\"Rollout_selection"\:\{\"K\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Rollout_selection"\:\{\"K\":([0-9]+(?:\.[0-9]+)?)'],
             "Move Ordering & K-Best",
             "k"
         ),
@@ -164,26 +164,41 @@ def print_hybrids(result_dict: dict[list]):
             "POMCP-Mixed",
             [
                 r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'
+                r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'
             ],
             "Mixed-Hybrid Siegesrate",
-            "k"
+            ["Epsilon", "Schwellwert"]
         ),
         (
             "POMCP-IR",
-            r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            [
+                r'\"Rollout_selection\":{"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Rollout_selection\":{"Search_depth\":[0-9]* \"Epsilon\":([0-9]+(?:\.[0-9]+)?)'
+            ],
             "POMCP with informed rollouts",
-            "hui"
+            ["Epsilon", "Suchtiefe"]
         ),
         (
             "DPC-POMCP-IC",
-            r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
+            [
+                r'\"Early_playout_termination\"\:\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)'
+            ],
             "POMCP with informed rollouts",
-            "hui"
+            ["Suchtiefe", "Abbruchstiefe"]
+        ),
+        (
+            "DPC-POMCP-IP",
+            [
+                r'\"Prior_hybrid\"\:\{\"Weight\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)'
+            ],
+            "POMCP with informed rollouts",
+            ["Suchtiefe", "Gewichtung"]
         ),
         (
             "LAC-POMCP-UCB",
-            r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)',
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
         ),
@@ -194,6 +209,11 @@ def print_hybrids(result_dict: dict[list]):
         y = []
         e_low = []
         e_high = []
+        if len(reg) > 1:
+            two_parameters(result_dict, name, reg, title, x_axis_label)
+            continue
+        else:
+            reg = reg.pop()
         for key, value in result_dict.items():
             pomcp_name = re.search(r'POMCP_name"\s*:\s*"([^"]*)', key)
             if pomcp_name and name == pomcp_name.group(1):
@@ -224,6 +244,45 @@ def print_hybrids(result_dict: dict[list]):
         fig.tight_layout()
         plt.savefig(f"{name}.png", dpi=300)
         plt.close()
+
+def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_axis_label: str):
+    x = {}
+    y = {}
+    e_low = {}
+    e_high = {}
+    for key, value in result_dict.items():
+        pomcp_name = re.search(r'POMCP_name"\s*:\s*"([^"]*)', key)
+        if pomcp_name and name == pomcp_name.group(1):
+            param1 = float(re.search(reg[0], key).group(1))
+            param2 = float(re.search(reg[1], key).group(1))
+            player_wins = value[0][0] + value[1][0]
+            player_games = sum(value[0]) + sum(value[1])
+            win_percentage = 100 * player_wins / player_games
+            res = binomtest(player_wins, player_games)
+            ci = res.proportion_ci(1 - 0.05, method="wilson")
+            print(name, param1, param2, win_percentage, value)
+            if not x.get(param1):
+                x[param1] = []
+                y[param1] = []
+                e_low[param1] = []
+                e_high[param1] = []
+            x[param1].append(param2)
+            y[param1].append(win_percentage)
+            e_low[param1].append(ci.low)
+            e_high[param1].append(ci.high)
+    fig, ax = plt.subplots()
+    for some, _ in x.items():
+        #x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))
+        #x = 0.5 + np.arange(len(y))
+        ax.errorbar(x[some], y[some], [e_low[some], e_high[some]], fmt='o', linewidth=2, capsize=6, label=f"{some}")
+
+    ax.set_title(title)
+    ax.set_ylabel("Siegesrate in %")
+    ax.set_xlabel(x_axis_label[0])
+    ax.legend(title=x_axis_label[1])
+    fig.tight_layout()
+    plt.savefig(f"{name}.png", dpi=300)
+    plt.close()
 
 def sum_result(category: str, results: dict, line: list, field_no: int):
     if results[category].get(line[field_no]):
