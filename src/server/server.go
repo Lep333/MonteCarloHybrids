@@ -51,7 +51,7 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (int, [
 		if !legal_move {
 			panic("---ILLEGAL MOVE---")
 		}
-		game = game.ExecuteMove(move_to_play)
+		game.ExecuteMove(move_to_play)
 		move++
 	}
 	fmt.Printf("%v", game)

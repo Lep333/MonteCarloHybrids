@@ -197,22 +197,19 @@ func (d *DarkPawnChess) get_vision() []Move {
 	return moves
 }
 
-func (d *DarkPawnChess) ExecuteMove(move Move) ChessVariation {
-	copy := *d
+func (d *DarkPawnChess) ExecuteMove(move Move) {
 	var mask_from uint = 1 << move.From
 	var mask_to uint = 1 << move.To
 	var mask uint = mask_from | mask_to
 	if d.whiteToPlay {
-		copy.white_pawns ^= mask
-		copy.black_pawns = d.black_pawns &^ mask_to
+		d.white_pawns ^= mask
+		d.black_pawns = d.black_pawns &^ mask_to
 	} else {
-		copy.black_pawns ^= mask
-		copy.white_pawns = d.white_pawns &^ mask_to
+		d.white_pawns = d.white_pawns &^ mask_to
 	}
-	copy.whiteToPlay = !d.whiteToPlay
+	d.whiteToPlay = !d.whiteToPlay
 	// TODO: remove copy.prev_board = d
-	copy.number_of_moves = d.number_of_moves + 1
-	return &copy
+	d.number_of_moves = d.number_of_moves + 1
 }
 
 func (d *DarkPawnChess) CreateView() ChessVariation {

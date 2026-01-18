@@ -419,68 +419,66 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool) []Move {
 	return possible_moves
 }
 
-func (l *LosAlamosChess) ExecuteMove(move Move) ChessVariation {
-	copy := *l
+func (l *LosAlamosChess) ExecuteMove(move Move) {
 	move_to_mask := uint(0b1 << move.To)
 	move_from_mask := uint(0b1 << move.From)
 	if l.white_rooks&move_to_mask > 0 {
-		copy.white_rooks -= move_to_mask
+		l.white_rooks -= move_to_mask
 	} else if l.white_knights&move_to_mask > 0 {
-		copy.white_knights -= move_to_mask
+		l.white_knights -= move_to_mask
 	} else if l.white_queen&move_to_mask > 0 {
-		copy.white_queen -= move_to_mask
+		l.white_queen -= move_to_mask
 	} else if l.white_king&move_to_mask > 0 {
-		copy.white_king -= move_to_mask
+		l.white_king -= move_to_mask
 	} else if l.white_pawns&move_to_mask > 0 {
-		copy.white_pawns -= move_to_mask
+		l.white_pawns -= move_to_mask
 	} else if l.black_rooks&move_to_mask > 0 {
-		copy.black_rooks -= move_to_mask
+		l.black_rooks -= move_to_mask
 	} else if l.black_knights&move_to_mask > 0 {
-		copy.black_knights -= move_to_mask
+		l.black_knights -= move_to_mask
 	} else if l.black_queen&move_to_mask > 0 {
-		copy.black_queen -= move_to_mask
+		l.black_queen -= move_to_mask
 	} else if l.black_king&move_to_mask > 0 {
-		copy.black_king -= move_to_mask
+		l.black_king -= move_to_mask
 	} else if l.black_pawns&move_to_mask > 0 {
-		copy.black_pawns -= move_to_mask
+		l.black_pawns -= move_to_mask
 	}
 
 	if l.white_rooks&move_from_mask > 0 {
-		copy.white_rooks += -move_from_mask + move_to_mask
+		l.white_rooks += -move_from_mask + move_to_mask
 	} else if l.white_knights&move_from_mask > 0 {
-		copy.white_knights += -move_from_mask + move_to_mask
+		l.white_knights += -move_from_mask + move_to_mask
 	} else if l.white_queen&move_from_mask > 0 {
-		copy.white_queen += -move_from_mask + move_to_mask
+		l.white_queen += -move_from_mask + move_to_mask
 	} else if l.white_king&move_from_mask > 0 {
-		copy.white_king += -move_from_mask + move_to_mask
+		l.white_king += -move_from_mask + move_to_mask
 	} else if l.white_pawns&move_from_mask > 0 {
 		if move_to_mask >= uint(math.Pow(2, 30)) {
-			copy.white_queen += move_to_mask
-			copy.white_pawns += -move_from_mask
+			l.white_queen += move_to_mask
+			l.white_pawns += -move_from_mask
 		} else {
-			copy.white_pawns += -move_from_mask + move_to_mask
+			l.white_pawns += -move_from_mask + move_to_mask
 		}
 	} else if l.black_rooks&move_from_mask > 0 {
-		copy.black_rooks += -move_from_mask + move_to_mask
+		l.black_rooks += -move_from_mask + move_to_mask
 	} else if l.black_knights&move_from_mask > 0 {
-		copy.black_knights += -move_from_mask + move_to_mask
+		l.black_knights += -move_from_mask + move_to_mask
 	} else if l.black_queen&move_from_mask > 0 {
-		copy.black_queen += -move_from_mask + move_to_mask
+		l.black_queen += -move_from_mask + move_to_mask
 	} else if l.black_king&move_from_mask > 0 {
-		copy.black_king += -move_from_mask + move_to_mask
+		l.black_king += -move_from_mask + move_to_mask
 	} else if l.black_pawns&move_from_mask > 0 {
 		if move_to_mask <= uint(math.Pow(2, 5)) {
-			copy.white_queen += move_to_mask
-			copy.black_pawns += -move_from_mask
+			l.white_queen += move_to_mask
+			l.black_pawns += -move_from_mask
 		} else {
-			copy.black_pawns += -move_from_mask + move_to_mask
+			l.black_pawns += -move_from_mask + move_to_mask
 		}
 	}
-	copy.number_of_moves++
-	copy.whiteToPlay = !copy.whiteToPlay
+	l.number_of_moves++
+	l.whiteToPlay = !l.whiteToPlay
 
-	copy.set_occupancy_boards()
-	return &copy
+	l.set_occupancy_boards()
 }
 
 func (l *LosAlamosChess) set_occupancy_boards() {

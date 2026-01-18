@@ -35,7 +35,8 @@ func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_var
 	score := 0.0
 	var move_scores []MoveScore
 	for _, move := range moves {
-		value := s.ExecuteMove(move).Heuristic(white)
+		s.ExecuteMove(move)
+		value := s.Heuristic(white)
 		if value > c.Bound {
 			return move
 		} else if value <= default_value {
@@ -79,8 +80,8 @@ func (g *GreedySelection) Select(s chess_variation.ChessVariation) chess_variati
 		white = false
 	}
 	for _, move := range possible_moves {
-		new_s := s.ExecuteMove(move)
-		score := new_s.Heuristic(white)
+		s.ExecuteMove(move)
+		score := s.Heuristic(white)
 		if score > max_score {
 			max_score = score
 			best_move = move
@@ -131,8 +132,8 @@ func (e *EarlyPlayoutTerminationStruct) EarlyPlayoutTermination(
 		return false, 0.0
 	} else {
 		for _, move := range s.PossibleMoves() {
-			new_s := s.ExecuteMove(move)
-			score := new_s.Heuristic(white)
+			s.ExecuteMove(move)
+			score := s.Heuristic(white)
 			if score >= max_score {
 				max_score = score
 			}
@@ -202,8 +203,8 @@ func (k *KBest) Select(s chess_variation.ChessVariation) chess_variation.Move {
 		white = false
 	}
 	for _, move := range s.PossibleMoves() {
-		new_s := s.ExecuteMove(move)
-		score := new_s.Heuristic(white)
+		s.ExecuteMove(move)
+		score := s.Heuristic(white)
 		moves = append(moves, MoveScore{move: move, score: score})
 	}
 	sort.Slice(moves, func(i int, j int) bool {

@@ -17,7 +17,8 @@ func (g *Greedy) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Mov
 	best_move := chess.Move{}
 	best_eval := math.Inf(-1)
 	for _, move := range possible_moves {
-		new_state := board.ExecuteMove(move)
+		new_state := board.ReturnBoard()
+		new_state.ExecuteMove(move)
 		eval := new_state.Heuristic(whiteToPlay)
 		if over, _ := new_state.GameOver(); over {
 			return move
