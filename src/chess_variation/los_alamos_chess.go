@@ -472,13 +472,8 @@ func (l *LosAlamosChess) ExecuteMove(move Move) {
 		l.black_king += -move_from_mask + move_to_mask
 	} else if l.black_pawns&move_from_mask > 0 {
 		if move_to_mask <= uint(math.Pow(2, 5)) {
-<<<<<<< HEAD
-			l.white_queen += move_to_mask
+			l.black_queen += move_to_mask
 			l.black_pawns += -move_from_mask
-=======
-			copy.black_queen += move_to_mask
-			copy.black_pawns += -move_from_mask
->>>>>>> 15e9f33 (Small fix in DLAC.)
 		} else {
 			l.black_pawns += -move_from_mask + move_to_mask
 		}
