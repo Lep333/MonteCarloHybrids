@@ -21,7 +21,7 @@ var upgrader = websocket.Upgrader{
 			"http://localhost:8080":
 			return true
 		default:
-			return false
+			return true
 		}
 	},
 }
@@ -41,11 +41,11 @@ func play_game(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 	tune_settings := player.Settings{
-		Termination_parameter:     1000,
+		Termination_parameter:     5000,
 		Gamma:                     0.95,
 		Epsilon:                   0.005,
 		Ucb_c:                     1,
-		Rollout_capture:           0.3,
+		Rollout_capture:           0.0,
 		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
