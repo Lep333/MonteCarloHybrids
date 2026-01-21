@@ -206,9 +206,9 @@ func (d *DarkPawnChess) ExecuteMove(move Move) {
 		d.black_pawns = d.black_pawns &^ mask_to
 	} else {
 		d.white_pawns = d.white_pawns &^ mask_to
+		d.black_pawns ^= mask
 	}
 	d.whiteToPlay = !d.whiteToPlay
-	// TODO: remove copy.prev_board = d
 	d.number_of_moves = d.number_of_moves + 1
 }
 
