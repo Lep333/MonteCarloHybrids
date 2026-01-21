@@ -81,7 +81,7 @@ func play_game(w http.ResponseWriter, r *http.Request) {
 			curr_player = player2
 		}
 		move := curr_player.GetMove(curr_player.ViewFunc(game), game.GetNumberOfMoves()%2 == 0)
-		game = game.ExecuteMove(move)
+		game.ExecuteMove(move)
 		log.Println(game.String())
 	}
 }

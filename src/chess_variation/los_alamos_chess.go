@@ -491,14 +491,14 @@ func (l *LosAlamosChess) set_occupancy_boards() {
 		l.black_queen | l.black_king | l.black_pawns
 }
 
-func (l *LosAlamosChess) CreateView() ChessVariation {
+func (l *LosAlamosChess) CreateView(white bool) ChessVariation {
 	copy := *l
 	moves := l.PossibleMoves()
 	vision := uint(0)
 	for _, move := range moves {
 		vision |= (1 << move.To)
 	}
-	if l.whiteToPlay {
+	if white {
 		field_in_front_of_pawns := l.white_pawns << row_length_lac
 		vision |= l.white_pawns | l.white_rooks | l.white_knights |
 			l.white_queen | l.white_king | field_in_front_of_pawns

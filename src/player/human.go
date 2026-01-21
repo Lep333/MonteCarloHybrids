@@ -12,7 +12,8 @@ type HumanPlayer struct {
 }
 
 func (h *HumanPlayer) ViewFunc(board chess.ChessVariation) chess.ChessVariation {
-	return board.CreateView()
+	white := board.GetNumberOfMoves()%2 == 0
+	return board.CreateView(white)
 }
 
 type BoardUpdate struct {

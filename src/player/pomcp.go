@@ -1,9 +1,11 @@
 package player
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	chess "monte_carlo_hybrids/chess_variation"
+	"strconv"
 	"time"
 )
 
@@ -13,11 +15,17 @@ type POMCP struct {
 	Last_move       chess.Move
 	Settings        Settings
 	Rollouts        int
+	NBeliefs        int
+	Nodes           map[string]*Node
 }
 
 type Combined_Key struct {
 	action      chess.Move
 	observation string
+}
+
+type History struct {
+	history []Combined_Key
 }
 
 type Settings struct {
@@ -42,10 +50,12 @@ type Node struct {
 	move        chess.Move                      // a
 	observation chess.ChessVariation            // o
 	beliefs     map[string]chess.ChessVariation // B
+	history     string
 }
 
 func (p *POMCP) ViewFunc(board chess.ChessVariation) chess.ChessVariation {
-	return board.CreateView()
+	white := board.GetNumberOfMoves()%2 == 0
+	return board.CreateView(white)
 }
 
 func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
@@ -58,6 +68,7 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	visits_before := p.Root.visits
 	selected_move := p.search(p.Root)
 	p.Rollouts = p.Root.visits - visits_before
+	p.NBeliefs = len(p.Root.beliefs)
 	if (selected_move == chess.Move{}) {
 		selected_move = random_element(board.PossibleMoves())
 	}
@@ -67,12 +78,13 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 
 func (p *POMCP) Init_pomcp(board chess.ChessVariation, whiteToPlay bool) {
 	if p.Root == nil {
+		white := board.GetNumberOfMoves()%2 == 0
 		beliefs := make(map[string]chess.ChessVariation)
 		if board.GetNumberOfMoves() == 0 {
 			init_board := board.ReturnBoard()
 			init_board.InitGame()
 			beliefs[init_board.String()] = init_board
-			p.Root = &Node{nil, nil, 0, 0, chess.Move{}, nil, beliefs}
+			p.Root = &Node{nil, map[Combined_Key]*Node{}, 0, 0, chess.Move{}, board.CreateView(white), beliefs, ""}
 		} else if board.GetNumberOfMoves() == 1 {
 			init_board := board.ReturnBoard()
 			init_board.InitGame()
@@ -84,16 +96,20 @@ func (p *POMCP) Init_pomcp(board chess.ChessVariation, whiteToPlay bool) {
 					beliefs[follow_state_string] = game
 				}
 			}
-			p.Root = &Node{nil, nil, 0, 0, chess.Move{}, nil, beliefs}
+			p.Root = &Node{nil, map[Combined_Key]*Node{}, 0, 0, chess.Move{}, nil, beliefs, ""}
 		}
 		p.Started_playing = whiteToPlay
+		p.Nodes = map[string]*Node{}
+		p.Nodes[""] = p.Root
 	}
 }
 
 func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 	if p.Last_move != (chess.Move{}) {
-		board_string := board.String()
-		new_root := p.Root.children[Combined_Key{p.Last_move, board_string}]
+		white := board.GetNumberOfMoves()%2 == 0
+		observation_string := board.CreateView(white).String()
+		new_history := p.Root.history + fmt.Sprintf("<%s,%s>", moveToStr(p.Last_move), observation_string)
+		new_root := p.Nodes[new_history]
 		if new_root != nil {
 			new_root.parent = nil
 		}
@@ -101,18 +117,19 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 			consistent_beliefs := map[string]chess.ChessVariation{}
 			for key, belief := range p.Root.beliefs {
 				new_s := p.state_transition(belief)
-				if new_s.CreateView().String() == board.String() {
+
+				if new_s.CreateView(white).String() == board.String() {
 					consistent_beliefs[key] = belief
 				}
 			}
-			new_root = &Node{nil, nil, 0, 0, chess.Move{}, nil, consistent_beliefs}
+			new_root = &Node{nil, map[Combined_Key]*Node{}, 0, 0, chess.Move{}, nil, consistent_beliefs, new_history}
 		}
 		p.Root = new_root // TODO: find
 		// update consistent beliefs
 		consistent_beliefs := map[string]chess.ChessVariation{}
 		// consistent_beliefs[] = append(consistent_beliefs, board)
 		for key, belief := range p.Root.beliefs {
-			if belief.CreateView().String() == board.String() {
+			if belief.CreateView(white).String() == board.String() {
 				consistent_beliefs[key] = belief
 			}
 		}
@@ -128,22 +145,37 @@ func (p *POMCP) search(h *Node) chess.Move {
 	// for i := 0; i < 10000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
 		s := random_belief(h.beliefs)
-		if len(h.children) == 0 {
-			h.children = create_all_children(s, h)
-		}
 		copy := s.ReturnBoard()
-		p.simulate(copy, h, 0)
+		p.simulate(copy, h, 0, p.Settings.Gamma)
 	}
 	return get_best_move(h)
 }
 
-func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
-	if math.Pow(p.Settings.Gamma, float64(depth)) < p.Settings.Epsilon {
+func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, gamma float64) float64 {
+	if gamma < p.Settings.Epsilon {
 		return 0
 	}
-	if len(h.children) == 0 { // expand
+	own_action := depth%2 == 0
+	var opp bool
+	opp = false
+	if h.parent != nil {
+		_, opp = h.parent.children[Combined_Key{h.move, h.observation.String()}]
+		opp = !opp
+	}
+	expansion := opp
+	if own_action && depth > 1 {
+		_, own := p.Nodes[h.history]
+		expansion = !own
+	}
+	white := s.GetNumberOfMoves()%2 == 0
+	if expansion {
 		// h.beliefs = append(h.beliefs, s)
 		// h.children = create_all_children(s, h)
+		if own_action && depth > 1 {
+			p.Nodes[h.history] = h
+		} else {
+			h.parent.children[Combined_Key{h.move, h.observation.String()}] = h
+		}
 		if p.Settings.Prior_hybrid != nil {
 			return p.Settings.Prior_hybrid.Prior(h, s)
 		}
@@ -153,30 +185,38 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int) float64 {
 	if p.Settings.Selection_hybrid != nil {
 		a = p.Settings.Selection_hybrid.Select(s)
 	} else {
-		a = p.get_most_promising_action_by_ucb(h)
+		a = p.get_most_promising_action_by_ucb(s, h)
 	}
+	h.beliefs[s.String()] = s.ReturnBoard()
 	s.ExecuteMove(a)
-	possible_moves := s.PossibleMoves()
-	if len(possible_moves) > 0 {
-		opponent_move := random_element(possible_moves)
-		s.ExecuteMove(opponent_move)
+	o := s.CreateView(white)
+	var ha *Node
+	if own_action {
+		ha = h.children[Combined_Key{a, o.String()}]
+		if ha == nil {
+			// if key does not exist -> create it
+			ha = &Node{
+				h, map[Combined_Key]*Node{}, 0, 0, a, o, map[string]chess.ChessVariation{}, h.history,
+			}
+		}
+	} else {
+		observation_string := h.observation.String()
+		new_history := h.history + fmt.Sprintf("<%s,%s>", moveToStr(h.move), observation_string)
+		ha = p.Nodes[new_history]
+		if ha == nil {
+			// if key does not exist -> create it
+			ha = &Node{
+				h, map[Combined_Key]*Node{}, 0, 0, h.move, o, map[string]chess.ChessVariation{}, new_history,
+			}
+		}
+		ha.beliefs[s.String()] = s.ReturnBoard()
 	}
-	ha := h.children[Combined_Key{a, s.CreateView().String()}] // s needs to be an observation?
-	if ha == nil {
-		// if key does not exist -> create it
-		o := s.ReturnBoard()
-		observation_string := o.CreateView().String()
-		h.children[Combined_Key{a, observation_string}] = &Node{h, nil, 0, 0, a, o, map[string]chess.ChessVariation{}}
-		ha = h.children[Combined_Key{a, observation_string}]
-	}
-	reward := p.Settings.Gamma * p.simulate(s, ha, depth+1)
-	if len(h.beliefs) < 1200 {
-		h.beliefs[s.String()] = s
-	}
+
+	reward := p.Settings.Gamma * p.simulate(s, ha, depth+1, math.Pow(gamma, float64(depth)))
 	h.visits++
 	ha.visits++
 	ha.value = ha.value + (reward-ha.value)/float64(ha.visits)
-	return reward
+	return -reward
 }
 
 func (p *POMCP) rollout(s chess.ChessVariation, depth int) float64 {
@@ -276,36 +316,23 @@ func get_best_move(h *Node) chess.Move {
 
 func create_all_children(s chess.ChessVariation, h *Node) map[Combined_Key]*Node {
 	possible_transitions := make(map[Combined_Key]*Node)
+	white := s.GetNumberOfMoves()%2 == 0
 	// differentiate between own action and opponent action in data type
 	for _, belief := range h.beliefs {
 		for _, own_move := range belief.PossibleMoves() {
 			new_s := belief.ReturnBoard()
 			new_s.ExecuteMove(own_move)
-			game_over, _ := new_s.GameOver()
-			if game_over {
-				belief := map[string]chess.ChessVariation{}
-				belief[new_s.String()] = new_s
-				new_child := &Node{h, nil, 0, 0, own_move, new_s, belief}
-				possible_transitions[Combined_Key{own_move, new_s.CreateView().String()}] = new_child
-			}
-			for _, opponent_move := range new_s.PossibleMoves() {
-				new_s.ExecuteMove(opponent_move)
-				o := new_s
-				if val, ok := possible_transitions[Combined_Key{own_move, o.CreateView().String()}]; ok {
-					val.beliefs[o.String()] = o
-				} else {
-					belief := map[string]chess.ChessVariation{}
-					belief[o.String()] = o
-					new_child := &Node{h, nil, 0, 0, own_move, o, belief}
-					possible_transitions[Combined_Key{own_move, o.CreateView().String()}] = new_child
-				}
-			}
+			belief := map[string]chess.ChessVariation{}
+			belief[new_s.String()] = new_s
+			o := new_s.CreateView(white)
+			new_child := &Node{h, map[Combined_Key]*Node{}, 0, 0, own_move, o, belief, ""}
+			possible_transitions[Combined_Key{own_move, o.String()}] = new_child
 		}
 	}
 	return possible_transitions
 }
 
-// simulates random own move and opponents
+// simulates random own move
 func (p *POMCP) state_transition(s chess.ChessVariation) chess.ChessVariation {
 	possible_moves := s.PossibleMoves()
 	if len(possible_moves) == 0 {
@@ -313,12 +340,6 @@ func (p *POMCP) state_transition(s chess.ChessVariation) chess.ChessVariation {
 	}
 	selected_move := p.rollout_move_selection(s, possible_moves)
 	s.ExecuteMove(selected_move)
-	game_over, _ := s.GameOver()
-	if !game_over {
-		opponent_possible_moves := s.PossibleMoves()
-		opponent_selected_move := p.rollout_move_selection(s, opponent_possible_moves)
-		s.ExecuteMove(opponent_selected_move)
-	}
 	return s
 }
 
@@ -338,12 +359,15 @@ func (p *POMCP) rollout_move_selection(s chess.ChessVariation, possible_moves []
 	return selected_move
 }
 
-func (p *POMCP) get_most_promising_action_by_ucb(h *Node) chess.Move {
+func (p *POMCP) get_most_promising_action_by_ucb(s chess.ChessVariation, h *Node) chess.Move {
 	var max_ucb float64 = math.Inf(-1)
 	var max_child *Node
 	var not_visited_action []chess.Move
 	not_visited := false
 
+	if len(h.children) == 0 {
+		return random_element(s.PossibleMoves())
+	}
 	for _, child := range h.children {
 		var ucb float64
 		if child.visits == 0 {
@@ -363,6 +387,10 @@ func (p *POMCP) get_most_promising_action_by_ucb(h *Node) chess.Move {
 		return random_element(not_visited_action)
 	}
 	return max_child.move
+}
+
+func moveToStr(move chess.Move) string {
+	return strconv.Itoa(int(move.From)) + "-" + strconv.Itoa(int(move.To))
 }
 
 func (p *POMCP) String() string {
