@@ -22,10 +22,7 @@ type CorrectiveSelection struct {
 }
 
 func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
-	white := true
-	if s.GetNumberOfMoves()%2 == 1 {
-		white = false
-	}
+	white := s.GetNumberOfMoves()%2 == 0
 	default_value := s.Heuristic(white)
 	moves := s.PossibleMoves()
 	if len(moves) == 0 {
@@ -35,7 +32,7 @@ func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_var
 	score := 0.0
 	var move_scores []MoveScore
 	for _, move := range moves {
-		s.ExecuteMove(move)
+		s.ReturnBoard().ExecuteMove(move)
 		value := s.Heuristic(white)
 		if value > c.Bound {
 			return move

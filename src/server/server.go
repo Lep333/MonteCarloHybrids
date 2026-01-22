@@ -8,12 +8,14 @@ import (
 	p "monte_carlo_hybrids/player"
 )
 
-func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (int, []chess_variation.Move, []int) {
+func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (
+	int, []chess_variation.Move, []int, []int) {
 	move := 0
 	var currPlayer p.Player
 	game.InitGame()
 	var move_history []chess_variation.Move
 	var rollouts []int
+	var beliefs []int
 	var result int
 	for {
 		game_over, tmp_result := game.GameOver()
@@ -21,12 +23,12 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (int, [
 			result = tmp_result
 			break
 		}
-		//fmt.Printf("Move: %v \n", move)
-		//fmt.Printf("%v", game)
+		fmt.Printf("Move: %v \n", move)
+		fmt.Printf("%v", game)
 		white_to_play := move%2 == 0
 		currPlayer = setCurrPlayer(move, player1, player2)
 		moves := game.PossibleMoves()
-		//fmt.Printf("Possible moves: %v \n", moves)
+		fmt.Printf("Possible moves: %v \n", moves)
 		if len(moves) == 0 {
 			fmt.Printf("No possible moves anymore! \n")
 			break
@@ -36,8 +38,10 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (int, [
 		move_history = append(move_history, move_to_play)
 		if pomcp, ok := currPlayer.(*player.POMCP); ok {
 			rollouts = append(rollouts, pomcp.Rollouts)
+			beliefs = append(beliefs, pomcp.NBeliefs)
 		} else {
 			rollouts = append(rollouts, 0)
+			beliefs = append(beliefs, 0)
 		}
 		fmt.Printf("Selected move: %v \n", move_to_play)
 		// check if move legal!
@@ -56,7 +60,7 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (int, [
 	}
 	fmt.Printf("%v", game)
 	fmt.Printf("Game finished! \n")
-	return result, move_history, rollouts
+	return result, move_history, rollouts, beliefs
 }
 
 func setCurrPlayer(move int, player1 p.Player, player2 p.Player) p.Player {

@@ -212,7 +212,7 @@ func (d *DarkPawnChess) ExecuteMove(move Move) {
 	d.number_of_moves = d.number_of_moves + 1
 }
 
-func (d *DarkPawnChess) CreateView() ChessVariation {
+func (d *DarkPawnChess) CreateView(white bool) ChessVariation {
 	copy := *d
 	poss_moves := copy.get_vision()
 	moves_to := []int{}
@@ -222,7 +222,7 @@ func (d *DarkPawnChess) CreateView() ChessVariation {
 		}
 	}
 
-	if copy.whiteToPlay {
+	if white {
 		copy.black_pawns = 0
 		for _, move_to := range moves_to {
 			copy.black_pawns += d.black_pawns & (1 << move_to)
@@ -237,6 +237,13 @@ func (d *DarkPawnChess) CreateView() ChessVariation {
 }
 
 func (d *DarkPawnChess) Heuristic(white bool) float64 {
+	if over, val := d.GameOver(); over {
+		if white {
+			return float64(val)
+		} else {
+			return -float64(val)
+		}
+	}
 	value := 0.0
 	no_white_pawns := 0
 	no_black_pawns := 0

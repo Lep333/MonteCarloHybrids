@@ -11,10 +11,10 @@ import (
 )
 
 func main() {
-	web_server()
+	// web_server()
 	var player1, player2 player.Player
 	tune_settings := player.Settings{
-		Termination_parameter:     5000,
+		Termination_parameter:     1000,
 		Gamma:                     0.95,
 		Epsilon:                   0.1,
 		Ucb_c:                     1,
@@ -22,8 +22,8 @@ func main() {
 		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
-		Early_playout_termination: &player.EarlyPlayoutTerminationStruct{},
-		POMCP_name:                "LAC-POMCP-EPT",
+		Early_playout_termination: nil,
+		POMCP_name:                "DPC_UCT",
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
@@ -34,10 +34,9 @@ func main() {
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	epts := []float64{2, 4, 8, 12, 16}
-	for _, ept := range epts {
-		tune_settings.Early_playout_termination = &player.EarlyPlayoutTerminationStruct{
-			Max_depth: ept}
+	ucbs := []float64{10}
+	for _, ucb := range ucbs {
+		tune_settings.Ucb_c = ucb
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
@@ -52,14 +51,14 @@ func main() {
 		}
 		iterations := 200
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.LosAlamosChess{}
+			game := chess_variation.DarkPawnChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2
 				player2 = temp
 			}
-			winner, moves, rollouts := server.PlayGame(&game, player1, player2)
-			print_game_result(player1, player2, moves, winner, rollouts)
+			winner, moves, rollouts, beliefs := server.PlayGame(&game, player1, player2)
+			print_game_result(player1, player2, moves, winner, rollouts, beliefs)
 		}
 	}
 	fmt.Printf("%v wins: %v \n", player1.String(), pomcp_wins)
@@ -67,7 +66,7 @@ func main() {
 }
 
 func print_game_result(player1 player.Player, player2 player.Player,
-	moves []chess_variation.Move, winner int, rollouts []int) {
+	moves []chess_variation.Move, winner int, rollouts []int, beliefs []int) {
 	// pc := reflect.ValueOf(settings1.Termination_Func).Pointer()
 	// fn := runtime.FuncForPC(pc)
 	// pc2 := reflect.ValueOf(settings2.Termination_Func).Pointer()
@@ -88,7 +87,7 @@ func print_game_result(player1 player.Player, player2 player.Player,
 	settings1_string = strings.ReplaceAll(settings1_string, ",", " ")
 	settings2_string = strings.ReplaceAll(settings2_string, ",", " ")
 	result_string := fmt.Sprintf(
-		"%v, %v, %v, %+v, %+v, %v, %v \n",
+		"%v, %v, %v, %+v, %+v, %v, %v, %v \n",
 		player1.String(),
 		player2.String(),
 		winner,
@@ -96,6 +95,7 @@ func print_game_result(player1 player.Player, player2 player.Player,
 		settings2_string,
 		moves,
 		rollouts,
+		beliefs,
 	)
 	print(result_string)
 	save_results(result_string) // remove for saving results
