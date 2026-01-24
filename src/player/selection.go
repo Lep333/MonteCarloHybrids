@@ -24,14 +24,14 @@ type CorrectiveSelection struct {
 func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	white := s.GetNumberOfMoves()%2 == 0
 	default_value := s.Heuristic(white)
-	moves := s.PossibleMoves()
-	if len(moves) == 0 {
+	n := s.PossibleMoves(Moves[:])
+	if n == 0 {
 		return chess_variation.Move{}
 	}
 	score_sum := 0.0
 	score := 0.0
 	var move_scores []MoveScore
-	for _, move := range moves {
+	for _, move := range Moves[:n] {
 		s.ReturnBoard().ExecuteMove(move)
 		value := s.Heuristic(white)
 		if value > c.Bound {
@@ -51,7 +51,7 @@ func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_var
 			return move.move
 		}
 	}
-	return moves[len(moves)-1]
+	return Moves[n-1]
 }
 
 type GreedySelection struct {
@@ -62,21 +62,21 @@ type GreedySelection struct {
 func (g *GreedySelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	max_score := math.Inf(-1)
 	var best_move chess_variation.Move
-	possible_moves := s.PossibleMoves()
+	n := s.PossibleMoves(Moves[:])
 
-	if len(possible_moves) == 0 {
+	if n == 0 {
 		return chess_variation.Move{}
 	}
 
 	if rand.Float64() < g.Epsilon {
-		return possible_moves[rand.Intn(len(possible_moves))]
+		return Moves[rand.Intn(n)]
 	}
 
 	white := true
 	if s.GetNumberOfMoves()%2 == 1 {
 		white = false
 	}
-	for _, move := range possible_moves {
+	for _, move := range Moves[:n] {
 		s.ExecuteMove(move)
 		score := s.Heuristic(white)
 		if score > max_score {
@@ -128,7 +128,8 @@ func (e *EarlyPlayoutTerminationStruct) EarlyPlayoutTermination(
 	if depth < e.Max_depth {
 		return false, 0.0
 	} else {
-		for _, move := range s.PossibleMoves() {
+		n := s.PossibleMoves(Moves[:])
+		for _, move := range Moves[:n] {
 			s.ExecuteMove(move)
 			score := s.Heuristic(white)
 			if score >= max_score {
@@ -147,7 +148,8 @@ type MCTS_with_informed_rollouts struct {
 func (m *MCTS_with_informed_rollouts) Select(
 	s chess_variation.ChessVariation) chess_variation.Move {
 	if rand.Float64() <= m.Epsilon {
-		return random_element(s.PossibleMoves())
+		n := s.PossibleMoves(Moves[:])
+		return random_element(Moves[:n])
 	}
 	best_move, _ := Minimax(s, true, math.Inf(-1), math.Inf(1), 0, m.Search_depth)
 	return best_move
@@ -199,7 +201,8 @@ func (k *KBest) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	if s.GetNumberOfMoves()%2 == 1 {
 		white = false
 	}
-	for _, move := range s.PossibleMoves() {
+	n := s.PossibleMoves(Moves[:])
+	for _, move := range Moves[:n] {
 		s.ExecuteMove(move)
 		score := s.Heuristic(white)
 		moves = append(moves, MoveScore{move: move, score: score})

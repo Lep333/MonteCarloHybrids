@@ -11,7 +11,7 @@ type ChessVariation interface {
 	ReturnBoard() ChessVariation
 	GetPreviousBoard() ChessVariation
 	GetNumberOfMoves() int
-	PossibleMoves() []Move
+	PossibleMoves(moves []Move) int
 	ExecuteMove(move Move)
 	CreateView(white bool) ChessVariation
 	GameOver() (bool, int)

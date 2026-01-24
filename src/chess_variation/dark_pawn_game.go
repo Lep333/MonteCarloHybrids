@@ -10,6 +10,8 @@ const no_fields_dpc uint = row_length_dpc * row_length_dpc
 const black_base_line_start_dpc uint = row_length_dpc * (row_length_dpc - 1)
 const row_bitmask_dpc uint = (1 << row_length_dpc) - 1
 
+var static_moves = [100]Move{}
+
 type DarkPawnChess struct {
 	white_pawns         uint
 	white_pawns_moves   [no_fields_dpc]uint
@@ -86,7 +88,7 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 		}
 	}
 
-	if len(d.get_moves()) == 0 {
+	if d.get_moves(static_moves[:]) == 0 {
 		game_over = true
 		no_of_white_pieces := 0
 		no_of_black_pieces := 0
@@ -108,33 +110,32 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 	return game_over, winner
 }
 
-func (d *DarkPawnChess) PossibleMoves() []Move {
-	moves := []Move{}
-
+func (d *DarkPawnChess) PossibleMoves(moves []Move) int {
 	game_over, _ := d.GameOver()
 	if game_over {
-		return moves
+		return 0
 	}
 
-	return d.get_moves()
+	return d.get_moves(moves)
 }
 
-func (d *DarkPawnChess) get_moves() []Move {
-	moves := []Move{}
-
+func (d *DarkPawnChess) get_moves(moves []Move) int {
+	n := 0
 	for i := uint(0); i < no_fields_dpc; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns & ^d.white_pawns
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
-				moves = append(moves, move)
+				moves[n] = move
+				n++
 			}
 
 			capture_possible := d.white_pawns_capture[i] & d.black_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
-					moves = append(moves, move)
+					moves[n] = move
+					n++
 				}
 			}
 		}
@@ -143,37 +144,40 @@ func (d *DarkPawnChess) get_moves() []Move {
 			move_to_possible := d.black_pawns_moves[i] & ^d.white_pawns & ^d.black_pawns
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
-				moves = append(moves, move)
+				moves[n] = move
+				n++
 			}
 
 			capture_possible := d.black_pawns_capture[i] & d.white_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
-					moves = append(moves, move)
+					moves[n] = move
+					n++
 				}
 			}
 		}
 	}
-	return moves
+	return n
 }
 
-func (d *DarkPawnChess) get_vision() []Move {
-	moves := []Move{}
-
+func (d *DarkPawnChess) get_vision(moves []Move) int {
+	n := 0
 	for i := uint(0); i < no_fields_dpc; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := d.white_pawns_moves[i]
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
-				moves = append(moves, move)
+				moves[n] = move
+				n++
 			}
 
 			capture_possible := d.white_pawns_capture[i] & d.black_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
-					moves = append(moves, move)
+					moves[n] = move
+					n++
 				}
 			}
 		}
@@ -182,19 +186,21 @@ func (d *DarkPawnChess) get_vision() []Move {
 			move_to_possible := d.black_pawns_moves[i]
 			if move_to_possible > 0 {
 				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
-				moves = append(moves, move)
+				moves[n] = move
+				n++
 			}
 
 			capture_possible := d.black_pawns_capture[i] & d.white_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
-					moves = append(moves, move)
+					moves[n] = move
+					n++
 				}
 			}
 		}
 	}
-	return moves
+	return n
 }
 
 func (d *DarkPawnChess) ExecuteMove(move Move) {
@@ -214,11 +220,12 @@ func (d *DarkPawnChess) ExecuteMove(move Move) {
 
 func (d *DarkPawnChess) CreateView(white bool) ChessVariation {
 	copy := *d
-	poss_moves := copy.get_vision()
-	moves_to := []int{}
-	for _, move := range poss_moves {
-		if !slices.Contains(moves_to, int(move.To)) {
-			moves_to = append(moves_to, int(move.To))
+	n := copy.get_vision(static_moves[:])
+	moves_to := [20]int{}
+	n_moves_to := 0
+	for _, move := range static_moves[:n] {
+		if !slices.Contains(moves_to[:], int(move.To)) {
+			moves_to[n_moves_to] = int(move.To)
 		}
 	}
 

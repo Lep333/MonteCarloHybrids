@@ -173,17 +173,12 @@ func (l *LosAlamosChess) GetNumberOfMoves() int {
 	return l.number_of_moves
 }
 
-func (l *LosAlamosChess) PossibleMoves() []Move {
-	possible_moves := []Move{}
-
-	moves := l.generate_moves()
-	possible_moves = append(possible_moves, moves...)
-
-	return possible_moves
+func (l *LosAlamosChess) PossibleMoves(moves []Move) int {
+	return l.generate_moves(moves)
 }
 
-func (l *LosAlamosChess) generate_moves() []Move {
-	possible_moves := []Move{}
+func (l *LosAlamosChess) generate_moves(buffer []Move) int {
+	n := 0
 
 	own_pawns := l.white_pawns
 	own_pawns_moves := l.white_pawns_moves
@@ -217,39 +212,32 @@ func (l *LosAlamosChess) generate_moves() []Move {
 			moves_possible := (own_pawns_moves[i] & ^opponent_occupancy &
 				^own_occupancy) |
 				(own_pawns_capture[i] & opponent_occupancy)
-			moves := l.move_bitboard_to_moves(i, moves_possible)
-			possible_moves = append(possible_moves, moves...)
+			n = l.move_bitboard_to_moves(i, moves_possible, buffer, n)
 		}
 		// rooks
 		if own_rooks&(0b1<<i) > 0 {
-			rook_moves := l.get_rook_moves(i, white_to_play)
-			possible_moves = append(possible_moves, rook_moves...)
+			n = l.get_rook_moves(i, white_to_play, buffer, n)
 		}
 		// knights
 		if own_knights&(0b1<<i) > 0 {
 			moves_possible := l.knights_moves[i] & ^own_occupancy
-			moves := l.move_bitboard_to_moves(i, moves_possible)
-			possible_moves = append(possible_moves, moves...)
+			n = l.move_bitboard_to_moves(i, moves_possible, buffer, n)
 		}
 		// queen
 		if own_queen&(0b1<<i) > 0 {
-			rook_moves := l.get_rook_moves(i, white_to_play)
-			possible_moves = append(possible_moves, rook_moves...)
-			queen_moves := l.get_bishop_moves(i, white_to_play)
-			possible_moves = append(possible_moves, queen_moves...)
+			n = l.get_rook_moves(i, white_to_play, buffer, n)
+			n = l.get_bishop_moves(i, white_to_play, buffer, n)
 		}
 		// king
 		if own_king&(0b1<<i) > 0 {
 			moves_possible := l.king_moves[i] & (^own_occupancy)
-			moves := l.move_bitboard_to_moves(i, moves_possible)
-			possible_moves = append(possible_moves, moves...)
+			n = l.move_bitboard_to_moves(i, moves_possible, buffer, n)
 		}
 	}
-	return possible_moves
+	return n
 }
 
-func (l *LosAlamosChess) move_bitboard_to_moves(start uint, move_bitboard uint) []Move {
-	possible_moves := []Move{}
+func (l *LosAlamosChess) move_bitboard_to_moves(start uint, move_bitboard uint, buffer []Move, n int) int {
 	for i := uint(0); i < no_fields_lac; i++ {
 		if move_bitboard&(0b1<<i) > 0 {
 			capture := false
@@ -257,21 +245,20 @@ func (l *LosAlamosChess) move_bitboard_to_moves(start uint, move_bitboard uint) 
 				capture = true
 			}
 			move := Move{From: int8(start), To: int8(i), Capture: capture}
-			possible_moves = append(possible_moves, move)
+			buffer[n] = move
+			n++
 		}
 	}
-	return possible_moves
+	return n
 }
 
-func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
+func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n int) int {
 	own_occupancy := l.white_occupancy
 	opponent_occupancy := l.black_occupancy
 	if !white_to_play {
 		own_occupancy = l.black_occupancy
 		opponent_occupancy = l.white_occupancy
 	}
-	possible_moves := []Move{}
-
 	// up
 	index := int(i + row_length_lac)
 	for index < int(no_fields_lac) && !(i/row_length_lac == row_length_lac-1) {
@@ -280,11 +267,13 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 		}
 		if opponent_occupancy&(0b1<<index) > 0 {
 			move := Move{From: int8(i), To: int8(index), Capture: true}
-			possible_moves = append(possible_moves, move)
+			buffer[n] = move
+			n++
 			break
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: false}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		index += int(row_length_lac)
 	}
 	// down
@@ -295,11 +284,13 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 		}
 		if opponent_occupancy&(0b1<<index) > 0 {
 			move := Move{From: int8(i), To: int8(index), Capture: true}
-			possible_moves = append(possible_moves, move)
+			buffer[n] = move
+			n++
 			break
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: false}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		index -= int(row_length_lac)
 	}
 	// right
@@ -314,11 +305,13 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 		}
 		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
 			move := Move{From: int8(i), To: int8(index), Capture: capture}
-			possible_moves = append(possible_moves, move)
+			buffer[n] = move
+			n++
 			break
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: false}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		index++
 	}
 	// left
@@ -333,18 +326,19 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool) []Move {
 		}
 		if index%int(row_length_lac) == 0 || capture {
 			move := Move{From: int8(i), To: int8(index), Capture: capture}
-			possible_moves = append(possible_moves, move)
+			buffer[n] = move
+			n++
 			break
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: false}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		index--
 	}
-	return possible_moves
+	return n
 }
 
-func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool) []Move {
-	possible_moves := []Move{}
+func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool, buffer []Move, n int) int {
 	own_occupancy := l.white_occupancy
 	opponent_occupancy := l.black_occupancy
 	if !white_to_play {
@@ -362,7 +356,8 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool) []Move {
 			capture = true
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: capture}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
 			break
 		}
@@ -379,7 +374,8 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool) []Move {
 			capture = true
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: capture}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
 			break
 		}
@@ -396,7 +392,8 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool) []Move {
 			capture = true
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: capture}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		if index%int(row_length_lac) == 0 || capture {
 			break
 		}
@@ -413,13 +410,14 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool) []Move {
 			capture = true
 		}
 		move := Move{From: int8(i), To: int8(index), Capture: capture}
-		possible_moves = append(possible_moves, move)
+		buffer[n] = move
+		n++
 		if index%int(row_length_lac) == 0 || capture {
 			break
 		}
 		index += 5
 	}
-	return possible_moves
+	return n
 }
 
 func (l *LosAlamosChess) ExecuteMove(move Move) {
@@ -491,11 +489,13 @@ func (l *LosAlamosChess) set_occupancy_boards() {
 		l.black_queen | l.black_king | l.black_pawns
 }
 
+var moves = [100]Move{}
+
 func (l *LosAlamosChess) CreateView(white bool) ChessVariation {
 	copy := *l
-	moves := l.PossibleMoves()
+	n := l.PossibleMoves(moves[:])
 	vision := uint(0)
-	for _, move := range moves {
+	for _, move := range moves[:n] {
 		vision |= (1 << move.To)
 	}
 	if white {
@@ -566,13 +566,13 @@ func (l *LosAlamosChess) Heuristic(white bool) float64 {
 	white_mobility := 0
 	black_mobility := 0
 	if white {
-		white_mobility = len(l.PossibleMoves())
+		white_mobility = l.PossibleMoves(moves[:])
 		l.whiteToPlay = !l.whiteToPlay
-		black_mobility = len(l.PossibleMoves())
+		black_mobility = l.PossibleMoves(moves[:])
 	} else {
-		black_mobility = len(l.PossibleMoves())
+		black_mobility = l.PossibleMoves(moves[:])
 		l.whiteToPlay = !l.whiteToPlay
-		white_mobility = len(l.PossibleMoves())
+		white_mobility = l.PossibleMoves(moves[:])
 	}
 	avg_material := (white_material + black_material) / 2
 	value = (white_material - black_material + float64(l.pawn_structure()) + 0.1*float64(white_mobility-black_mobility)) / avg_material

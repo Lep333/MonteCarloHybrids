@@ -8,6 +8,8 @@ import (
 	p "monte_carlo_hybrids/player"
 )
 
+var poss_moves = [100]c.Move{}
+
 func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (
 	int, []chess_variation.Move, []int, []int) {
 	move := 0
@@ -27,9 +29,9 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (
 		fmt.Printf("%v", game)
 		white_to_play := move%2 == 0
 		currPlayer = setCurrPlayer(move, player1, player2)
-		moves := game.PossibleMoves()
-		fmt.Printf("Possible moves: %v \n", moves)
-		if len(moves) == 0 {
+		n := game.PossibleMoves(poss_moves[:])
+		fmt.Printf("Possible moves: %v \n", poss_moves[:n])
+		if n == 0 {
 			fmt.Printf("No possible moves anymore! \n")
 			break
 		}
@@ -46,7 +48,8 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (
 		fmt.Printf("Selected move: %v \n", move_to_play)
 		// check if move legal!
 		legal_move := false
-		for _, move := range moves {
+		println("n: ", n)
+		for _, move := range poss_moves[:n] {
 			if move == move_to_play {
 				legal_move = true
 				break
