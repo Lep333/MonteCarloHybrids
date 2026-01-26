@@ -11,10 +11,10 @@ func (g *GreedyCaspi) ViewFunc(board chess.ChessVariation) chess.ChessVariation 
 }
 
 func (g *GreedyCaspi) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
-	n := board.PossibleMoves(Moves[:])
+	moves := board.PossibleMoves()
 	var captures []chess.Move
-	last_pawn := Moves[0]
-	for _, move := range Moves[:n] {
+	last_pawn := moves[0]
+	for _, move := range moves {
 		if move.Capture {
 			captures = append(captures, move)
 		}

@@ -13,10 +13,10 @@ func (g *Greedy) ViewFunc(board chess.ChessVariation) chess.ChessVariation {
 }
 
 func (g *Greedy) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
-	n := board.PossibleMoves(Moves[:])
+	moves := board.PossibleMoves()
 	best_move := chess.Move{}
 	best_eval := math.Inf(-1)
-	for _, move := range Moves[:n] {
+	for _, move := range moves {
 		new_state := board.ReturnBoard()
 		new_state.ExecuteMove(move)
 		eval := new_state.Heuristic(whiteToPlay)

@@ -22,8 +22,8 @@ func Minimax(s chess_variation.ChessVariation,
 		empty_move := chess_variation.Move{}
 		return empty_move, s.Heuristic(white)
 	}
-	n := s.PossibleMoves(Moves[:])
-	for _, move := range Moves[:n] {
+	moves := s.PossibleMoves()
+	for _, move := range moves {
 		s.ExecuteMove(move)
 		_, score := Minimax(s, !max, -beta, -alpha, depth+1, depth_limit)
 		score = -score

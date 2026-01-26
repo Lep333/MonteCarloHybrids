@@ -23,17 +23,17 @@ type BoardUpdate struct {
 
 func (h *HumanPlayer) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
 	log.Println(board.String())
-	board.PossibleMoves(Moves[:])
-	msg := BoardUpdate{Fen: board.FENString(), Moves: Moves[:]}
+	moves := board.PossibleMoves()
+	msg := BoardUpdate{Fen: board.FENString(), Moves: moves}
 	var move chess.Move
 	if err := h.Conn.WriteJSON(msg); err != nil {
 		log.Println(err)
-		return random_element(Moves[:])
+		return random_element(moves)
 	}
 	err := h.Conn.ReadJSON(&move)
 	if err != nil {
 		log.Println(err)
-		return random_element(Moves[:])
+		return random_element(moves)
 	}
 	return move
 }

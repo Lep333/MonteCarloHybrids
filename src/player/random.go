@@ -8,13 +8,13 @@ import (
 type RandomPlayer struct{}
 
 func (r *RandomPlayer) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move {
-	n := board.PossibleMoves(Moves[:])
-	for _, move := range Moves[:n] {
+	moves := board.PossibleMoves()
+	for _, move := range board.PossibleMoves() {
 		if move.Capture {
 			return move
 		}
 	}
-	return Moves[rand.Intn(n)]
+	return moves[rand.Intn(len(moves))]
 }
 
 func (r *RandomPlayer) String() string {

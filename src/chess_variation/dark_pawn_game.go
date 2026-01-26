@@ -1,26 +1,24 @@
 package chess_variation
 
-import (
-	"math"
-	"slices"
-)
-
 const row_length_dpc uint = 5
 const no_fields_dpc uint = row_length_dpc * row_length_dpc
 const black_base_line_start_dpc uint = row_length_dpc * (row_length_dpc - 1)
 const row_bitmask_dpc uint = (1 << row_length_dpc) - 1
 
-var static_moves = [100]Move{}
+var white_pawns_moves [no_fields_dpc]uint
+var white_pawns_capture [no_fields_dpc]uint
+var black_pawns_moves [no_fields_dpc]uint
+var black_pawns_capture [no_fields_dpc]uint
 
 type DarkPawnChess struct {
-	white_pawns         uint
-	white_pawns_moves   [no_fields_dpc]uint
-	white_pawns_capture [no_fields_dpc]uint
-	black_pawns         uint
-	black_pawns_moves   [no_fields_dpc]uint
-	black_pawns_capture [no_fields_dpc]uint
-	whiteToPlay         bool
-	number_of_moves     int
+	white_pawns     uint
+	black_pawns     uint
+	whiteToPlay     bool
+	number_of_moves int
+	view_mask_white uint64
+	view_mask_black uint64
+	moves           [20]Move
+	move_count      int
 }
 
 func (d *DarkPawnChess) InitGame() {
@@ -30,31 +28,32 @@ func (d *DarkPawnChess) InitGame() {
 	//d.white_pawns = 0b1111
 	d.black_pawns = row_bitmask_dpc << black_base_line_start_dpc
 	//d.black_pawns = 0b11000 << black_base_line_start_dpc
-	d.white_pawns_capture = [no_fields_dpc]uint{}
-	d.black_pawns_capture = [no_fields_dpc]uint{}
+	white_pawns_capture = [no_fields_dpc]uint{}
+	black_pawns_capture = [no_fields_dpc]uint{}
 
 	for i := uint(0); i < no_fields_dpc; i++ {
 		if i < no_fields_dpc-row_length_dpc {
-			d.white_pawns_moves[i] = 0b1 << (i + row_length_dpc)
+			white_pawns_moves[i] = 0b1 << (i + row_length_dpc)
 			if i%row_length_dpc != row_length_dpc-1 {
-				d.white_pawns_capture[i] += 0b1 << (i + row_length_dpc + 1) // left capture
+				white_pawns_capture[i] += 0b1 << (i + row_length_dpc + 1) // left capture
 			}
 			if i%row_length_dpc != 0 {
-				d.white_pawns_capture[i] += 0b1 << (i + row_length_dpc - 1) // right capture
+				white_pawns_capture[i] += 0b1 << (i + row_length_dpc - 1) // right capture
 			}
 		}
 
 		if i >= row_length_dpc {
-			d.black_pawns_moves[i] = 0b1 << (i - row_length_dpc)
+			black_pawns_moves[i] = 0b1 << (i - row_length_dpc)
 
 			if i%row_length_dpc != row_length_dpc-1 {
-				d.black_pawns_capture[i] += 0b1 << (i - row_length_dpc + 1) // left capture
+				black_pawns_capture[i] += 0b1 << (i - row_length_dpc + 1) // left capture
 			}
 			if i%row_length_dpc != 0 {
-				d.black_pawns_capture[i] += 0b1 << (i - row_length_dpc - 1) // right capture
+				black_pawns_capture[i] += 0b1 << (i - row_length_dpc - 1) // right capture
 			}
 		}
 	}
+	d.move_count = d.get_moves(d.moves[:])
 }
 
 func (d *DarkPawnChess) ReturnBoard() ChessVariation {
@@ -88,7 +87,7 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 		}
 	}
 
-	if d.get_moves(static_moves[:]) == 0 {
+	if d.get_moves(d.moves[:]) == 0 {
 		game_over = true
 		no_of_white_pieces := 0
 		no_of_black_pieces := 0
@@ -110,27 +109,27 @@ func (d *DarkPawnChess) GameOver() (bool, int) {
 	return game_over, winner
 }
 
-func (d *DarkPawnChess) PossibleMoves(moves []Move) int {
+func (d *DarkPawnChess) PossibleMoves() []Move {
 	game_over, _ := d.GameOver()
 	if game_over {
-		return 0
+		d.move_count = 0
+		return d.moves[:d.move_count]
 	}
-
-	return d.get_moves(moves)
+	return d.moves[:d.move_count]
 }
 
 func (d *DarkPawnChess) get_moves(moves []Move) int {
 	n := 0
 	for i := uint(0); i < no_fields_dpc; i++ {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
-			move_to_possible := d.white_pawns_moves[i] & ^d.black_pawns & ^d.white_pawns
+			move_to_possible := white_pawns_moves[i] & ^d.black_pawns & ^d.white_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
+				move := Move{int8(i), int8(i + row_length_dpc), false}
 				moves[n] = move
 				n++
 			}
 
-			capture_possible := d.white_pawns_capture[i] & d.black_pawns
+			capture_possible := white_pawns_capture[i] & d.black_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
@@ -141,14 +140,14 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 		}
 
 		if !d.whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
-			move_to_possible := d.black_pawns_moves[i] & ^d.white_pawns & ^d.black_pawns
+			move_to_possible := black_pawns_moves[i] & ^d.white_pawns & ^d.black_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
+				move := Move{int8(i), int8(i - row_length_dpc), false}
 				moves[n] = move
 				n++
 			}
 
-			capture_possible := d.black_pawns_capture[i] & d.white_pawns
+			capture_possible := black_pawns_capture[i] & d.white_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
 					move := Move{int8(i), int8(position), true}
@@ -161,48 +160,25 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 	return n
 }
 
-func (d *DarkPawnChess) get_vision(moves []Move) int {
-	n := 0
+func (d *DarkPawnChess) set_vision() {
+	white_mask := uint(0)
+	black_mask := uint(0)
 	for i := uint(0); i < no_fields_dpc; i++ {
-		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
-			move_to_possible := d.white_pawns_moves[i]
-			if move_to_possible > 0 {
-				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
-				moves[n] = move
-				n++
-			}
-
-			capture_possible := d.white_pawns_capture[i] & d.black_pawns
-			for position := uint(0); position < no_fields_dpc; position++ {
-				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position), true}
-					moves[n] = move
-					n++
-				}
-			}
+		if d.white_pawns&(0b1<<i) > 0 {
+			white_mask |= white_pawns_moves[i]
+			white_mask |= white_pawns_capture[i]
 		}
 
-		if !d.whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
-			move_to_possible := d.black_pawns_moves[i]
-			if move_to_possible > 0 {
-				move := Move{int8(i), int8(math.Log2(float64(move_to_possible))), false}
-				moves[n] = move
-				n++
-			}
-
-			capture_possible := d.black_pawns_capture[i] & d.white_pawns
-			for position := uint(0); position < no_fields_dpc; position++ {
-				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position), true}
-					moves[n] = move
-					n++
-				}
-			}
+		if d.black_pawns&(0b1<<i) > 0 {
+			black_mask |= black_pawns_moves[i]
+			black_mask |= black_pawns_capture[i]
 		}
 	}
-	return n
+	d.view_mask_white = uint64(white_mask)
+	d.view_mask_black = uint64(black_mask)
 }
 
+// executes move and updates view_mask
 func (d *DarkPawnChess) ExecuteMove(move Move) {
 	var mask_from uint = 1 << move.From
 	var mask_to uint = 1 << move.To
@@ -216,31 +192,60 @@ func (d *DarkPawnChess) ExecuteMove(move Move) {
 	}
 	d.whiteToPlay = !d.whiteToPlay
 	d.number_of_moves = d.number_of_moves + 1
+	d.move_count = d.get_moves(d.moves[:])
+	d.create_view_mask()
 }
+
+func (d *DarkPawnChess) UndoMove(move Move) {
+	d.whiteToPlay = !d.whiteToPlay
+	d.number_of_moves = d.number_of_moves - 1
+	var mask_from uint = 1 << move.From
+	var mask_to uint = 1 << move.To
+	var mask uint = mask_from | mask_to
+	if d.whiteToPlay {
+		d.white_pawns ^= mask
+		if move.Capture {
+			d.black_pawns = d.black_pawns | mask_to
+		}
+	} else {
+		if move.Capture {
+			d.white_pawns = d.white_pawns | mask_to
+		}
+		d.black_pawns ^= mask
+	}
+	d.move_count = d.get_moves(d.moves[:])
+	d.create_view_mask()
+}
+
+var static_moves = [20]Move{}
 
 func (d *DarkPawnChess) CreateView(white bool) ChessVariation {
 	copy := *d
-	n := copy.get_vision(static_moves[:])
-	moves_to := [20]int{}
-	n_moves_to := 0
-	for _, move := range static_moves[:n] {
-		if !slices.Contains(moves_to[:], int(move.To)) {
-			moves_to[n_moves_to] = int(move.To)
-		}
-	}
+	copy.set_vision()
 
 	if white {
-		copy.black_pawns = 0
-		for _, move_to := range moves_to {
-			copy.black_pawns += d.black_pawns & (1 << move_to)
-		}
+		copy.black_pawns = copy.black_pawns & uint(d.view_mask_white)
 	} else {
-		copy.white_pawns = 0
-		for _, move_to := range moves_to {
-			copy.white_pawns += d.white_pawns & (1 << move_to)
-		}
+		copy.white_pawns = copy.white_pawns & uint(d.view_mask_black)
 	}
 	return &copy
+}
+
+func (d *DarkPawnChess) create_view_mask() {
+	d.set_vision()
+}
+
+func (d *DarkPawnChess) ViewHash(white bool) uint64 {
+	hash := uint64(0)
+
+	if white {
+		hash = (uint64(d.black_pawns) & d.view_mask_white) << 32
+		hash |= uint64(d.white_pawns)
+	} else {
+		hash = uint64(d.white_pawns) & d.view_mask_black
+		hash |= uint64(d.black_pawns) << 32
+	}
+	return hash
 }
 
 func (d *DarkPawnChess) Heuristic(white bool) float64 {

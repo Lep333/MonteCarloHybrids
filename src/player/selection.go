@@ -21,19 +21,23 @@ type CorrectiveSelection struct {
 	Epsilon float64
 }
 
+var move_scores [100]MoveScore
+
 func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	white := s.GetNumberOfMoves()%2 == 0
 	default_value := s.Heuristic(white)
-	n := s.PossibleMoves(Moves[:])
-	if n == 0 {
+	moves := s.PossibleMoves()
+	if len(moves) == 0 {
 		return chess_variation.Move{}
 	}
 	score_sum := 0.0
 	score := 0.0
-	var move_scores []MoveScore
-	for _, move := range Moves[:n] {
-		s.ReturnBoard().ExecuteMove(move)
+
+	var move_scores_count uint
+	for _, move := range moves {
+		s.ExecuteMove(move)
 		value := s.Heuristic(white)
+		s.UndoMove(move)
 		if value > c.Bound {
 			return move
 		} else if value <= default_value {
@@ -41,7 +45,8 @@ func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_var
 		} else {
 			score = value
 		}
-		move_scores = append(move_scores, MoveScore{move, score})
+		move_scores[move_scores_count] = MoveScore{move, score}
+		move_scores_count++
 		score_sum += score
 	}
 	score_sum *= rand.Float64()
@@ -51,7 +56,7 @@ func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_var
 			return move.move
 		}
 	}
-	return Moves[n-1]
+	return moves[len(moves)-1]
 }
 
 type GreedySelection struct {
@@ -62,21 +67,21 @@ type GreedySelection struct {
 func (g *GreedySelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	max_score := math.Inf(-1)
 	var best_move chess_variation.Move
-	n := s.PossibleMoves(Moves[:])
+	moves := s.PossibleMoves()
 
-	if n == 0 {
+	if len(moves) == 0 {
 		return chess_variation.Move{}
 	}
 
 	if rand.Float64() < g.Epsilon {
-		return Moves[rand.Intn(n)]
+		return moves[rand.Intn(len(moves))]
 	}
 
 	white := true
 	if s.GetNumberOfMoves()%2 == 1 {
 		white = false
 	}
-	for _, move := range Moves[:n] {
+	for _, move := range moves {
 		s.ExecuteMove(move)
 		score := s.Heuristic(white)
 		if score > max_score {
@@ -128,8 +133,8 @@ func (e *EarlyPlayoutTerminationStruct) EarlyPlayoutTermination(
 	if depth < e.Max_depth {
 		return false, 0.0
 	} else {
-		n := s.PossibleMoves(Moves[:])
-		for _, move := range Moves[:n] {
+		moves := s.PossibleMoves()
+		for _, move := range moves {
 			s.ExecuteMove(move)
 			score := s.Heuristic(white)
 			if score >= max_score {
@@ -148,8 +153,8 @@ type MCTS_with_informed_rollouts struct {
 func (m *MCTS_with_informed_rollouts) Select(
 	s chess_variation.ChessVariation) chess_variation.Move {
 	if rand.Float64() <= m.Epsilon {
-		n := s.PossibleMoves(Moves[:])
-		return random_element(Moves[:n])
+		moves := s.PossibleMoves()
+		return random_element(moves)
 	}
 	best_move, _ := Minimax(s, true, math.Inf(-1), math.Inf(1), 0, m.Search_depth)
 	return best_move
@@ -201,8 +206,8 @@ func (k *KBest) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	if s.GetNumberOfMoves()%2 == 1 {
 		white = false
 	}
-	n := s.PossibleMoves(Moves[:])
-	for _, move := range Moves[:n] {
+	poss_moves := s.PossibleMoves()
+	for _, move := range poss_moves {
 		s.ExecuteMove(move)
 		score := s.Heuristic(white)
 		moves = append(moves, MoveScore{move: move, score: score})

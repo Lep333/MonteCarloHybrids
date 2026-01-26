@@ -29,9 +29,9 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (
 		fmt.Printf("%v", game)
 		white_to_play := move%2 == 0
 		currPlayer = setCurrPlayer(move, player1, player2)
-		n := game.PossibleMoves(poss_moves[:])
-		fmt.Printf("Possible moves: %v \n", poss_moves[:n])
-		if n == 0 {
+		moves := game.PossibleMoves()
+		fmt.Printf("Possible moves: %v \n", moves)
+		if len(moves) == 0 {
 			fmt.Printf("No possible moves anymore! \n")
 			break
 		}
@@ -41,6 +41,7 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (
 		if pomcp, ok := currPlayer.(*player.POMCP); ok {
 			rollouts = append(rollouts, pomcp.Rollouts)
 			beliefs = append(beliefs, pomcp.NBeliefs)
+			println("rollouts: ", pomcp.Rollouts)
 		} else {
 			rollouts = append(rollouts, 0)
 			beliefs = append(beliefs, 0)
@@ -48,8 +49,8 @@ func PlayGame(game c.ChessVariation, player1 p.Player, player2 p.Player) (
 		fmt.Printf("Selected move: %v \n", move_to_play)
 		// check if move legal!
 		legal_move := false
-		println("n: ", n)
-		for _, move := range poss_moves[:n] {
+		println("n: ", len(moves))
+		for _, move := range moves {
 			if move == move_to_play {
 				legal_move = true
 				break

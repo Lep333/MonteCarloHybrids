@@ -9,28 +9,31 @@ const row_length_lac uint = 6
 const no_fields_lac uint = row_length_lac * row_length_lac
 const black_base_line_start_lac uint = row_length_dpc * (row_length_dpc - 1)
 
+var lac_white_pawns_moves [no_fields_lac]uint
+var lac_white_pawns_capture [no_fields_lac]uint
+var lac_black_pawns_moves [no_fields_lac]uint
+var lac_black_pawns_capture [no_fields_lac]uint
+var lac_white_rooks_moves [no_fields_lac]uint
+var lac_knights_moves [no_fields_lac]uint
+var lac_king_moves [no_fields_lac]uint
+
 type LosAlamosChess struct {
-	white_pawns         uint
-	white_pawns_moves   [no_fields_lac]uint
-	white_pawns_capture [no_fields_lac]uint
-	black_pawns         uint
-	black_pawns_moves   [no_fields_lac]uint
-	black_pawns_capture [no_fields_lac]uint
-	white_rooks         uint
-	white_rooks_moves   [no_fields_lac]uint
-	black_rooks         uint
-	white_knights       uint
-	black_knights       uint
-	knights_moves       [no_fields_lac]uint
-	white_king          uint
-	black_king          uint
-	white_queen         uint
-	black_queen         uint
-	king_moves          [no_fields_lac]uint
-	white_occupancy     uint
-	black_occupancy     uint
-	whiteToPlay         bool
-	number_of_moves     int
+	white_pawns     uint
+	black_pawns     uint
+	white_rooks     uint
+	black_rooks     uint
+	white_knights   uint
+	black_knights   uint
+	white_king      uint
+	black_king      uint
+	white_queen     uint
+	black_queen     uint
+	white_occupancy uint
+	black_occupancy uint
+	whiteToPlay     bool
+	number_of_moves int
+	moves           [200]Move
+	move_count      int
 }
 
 func (l *LosAlamosChess) InitGame() {
@@ -38,10 +41,10 @@ func (l *LosAlamosChess) InitGame() {
 	l.number_of_moves = 0
 	l.white_pawns = 0b111111000000
 	l.black_pawns = 0b111111000000 << (row_length_lac * 3)
-	l.white_pawns_moves = [no_fields_lac]uint{}
-	l.black_pawns_moves = [no_fields_lac]uint{}
-	l.white_pawns_capture = [no_fields_lac]uint{}
-	l.black_pawns_capture = [no_fields_lac]uint{}
+	lac_white_pawns_moves = [no_fields_lac]uint{}
+	lac_black_pawns_moves = [no_fields_lac]uint{}
+	lac_white_pawns_capture = [no_fields_lac]uint{}
+	lac_black_pawns_capture = [no_fields_lac]uint{}
 	l.white_rooks = 0b100001
 	l.black_rooks = l.white_rooks << (row_length_lac * 5)
 	l.white_knights = 0b010010
@@ -50,8 +53,8 @@ func (l *LosAlamosChess) InitGame() {
 	l.black_king = l.white_king << (row_length_lac * 5)
 	l.white_queen = 0b00100
 	l.black_queen = l.white_queen << (row_length_lac * 5)
-	l.knights_moves = [no_fields_lac]uint{}
-	l.king_moves = [no_fields_lac]uint{}
+	lac_knights_moves = [no_fields_lac]uint{}
+	lac_king_moves = [no_fields_lac]uint{}
 
 	for i := uint(0); i < no_fields_lac; i++ {
 		l.init_pawns(i)
@@ -60,27 +63,28 @@ func (l *LosAlamosChess) InitGame() {
 	}
 
 	l.set_occupancy_boards()
+	l.move_count = l.generate_moves(l.moves[:])
 }
 
 func (l *LosAlamosChess) init_pawns(i uint) {
 	if i < no_fields_lac-row_length_lac {
-		l.white_pawns_moves[i] = 0b1 << (i + row_length_lac)
+		lac_white_pawns_moves[i] = 0b1 << (i + row_length_lac)
 		if i%row_length_lac != row_length_lac-1 {
-			l.white_pawns_capture[i] += 0b1 << (i + row_length_lac + 1) // left capture
+			lac_white_pawns_capture[i] += 0b1 << (i + row_length_lac + 1) // left capture
 		}
 		if i%row_length_lac != 0 {
-			l.white_pawns_capture[i] += 0b1 << (i + row_length_lac - 1) // right capture
+			lac_white_pawns_capture[i] += 0b1 << (i + row_length_lac - 1) // right capture
 		}
 	}
 
 	if i >= row_length_lac {
-		l.black_pawns_moves[i] = 0b1 << (i - row_length_lac)
+		lac_black_pawns_moves[i] = 0b1 << (i - row_length_lac)
 
 		if i%row_length_lac != row_length_lac-1 {
-			l.black_pawns_capture[i] += 0b1 << (i - row_length_lac + 1) // left capture
+			lac_black_pawns_capture[i] += 0b1 << (i - row_length_lac + 1) // left capture
 		}
 		if i%row_length_lac != 0 {
-			l.black_pawns_capture[i] += 0b1 << (i - row_length_lac - 1) // right capture
+			lac_black_pawns_capture[i] += 0b1 << (i - row_length_lac - 1) // right capture
 		}
 	}
 }
@@ -90,35 +94,35 @@ func (l *LosAlamosChess) init_knights(i uint) {
 	row := i / row_length_lac
 	// 2x up left
 	if col != 0 && row < 4 {
-		l.knights_moves[i] += 0b1 << (i + 2*row_length_lac - 1)
+		lac_knights_moves[i] += 0b1 << (i + 2*row_length_lac - 1)
 	}
 	// 2x up right
 	if col != 5 && row < 4 {
-		l.knights_moves[i] += 0b1 << (i + 2*row_length_lac + 1)
+		lac_knights_moves[i] += 0b1 << (i + 2*row_length_lac + 1)
 	}
 	// 2x right up
 	if col < 4 && row < 5 {
-		l.knights_moves[i] += 0b1 << (i + row_length_lac + 2)
+		lac_knights_moves[i] += 0b1 << (i + row_length_lac + 2)
 	}
 	// 2x right down
 	if col < 4 && row > 0 {
-		l.knights_moves[i] += 0b1 << (i - row_length_lac + 2)
+		lac_knights_moves[i] += 0b1 << (i - row_length_lac + 2)
 	}
 	// 2x down right
 	if col < 5 && row > 1 {
-		l.knights_moves[i] += 0b1 << (i - row_length_lac*2 + 1)
+		lac_knights_moves[i] += 0b1 << (i - row_length_lac*2 + 1)
 	}
 	// 2x down left
 	if col > 0 && row > 1 {
-		l.knights_moves[i] += 0b1 << (i - row_length_lac*2 - 1)
+		lac_knights_moves[i] += 0b1 << (i - row_length_lac*2 - 1)
 	}
 	// 2x left down
 	if col > 1 && row > 0 {
-		l.knights_moves[i] += 0b1 << (i - row_length_lac - 2)
+		lac_knights_moves[i] += 0b1 << (i - row_length_lac - 2)
 	}
 	// 2x left up
 	if col > 1 && row < 5 {
-		l.knights_moves[i] += 0b1 << (i + row_length_lac - 2)
+		lac_knights_moves[i] += 0b1 << (i + row_length_lac - 2)
 	}
 }
 
@@ -128,35 +132,35 @@ func (l *LosAlamosChess) init_kings(i uint) {
 
 	// up
 	if row < 5 {
-		l.king_moves[i] += 0b1 << (i + row_length_lac)
+		lac_king_moves[i] += 0b1 << (i + row_length_lac)
 	}
 	// up right
 	if row < 5 && col < 5 {
-		l.king_moves[i] += 0b1 << (i + row_length_lac + 1)
+		lac_king_moves[i] += 0b1 << (i + row_length_lac + 1)
 	}
 	// right
 	if col < 5 {
-		l.king_moves[i] += 0b1 << (i + 1)
+		lac_king_moves[i] += 0b1 << (i + 1)
 	}
 	// right down
 	if row > 0 && col < 5 {
-		l.king_moves[i] += 0b1 << (i - row_length_lac + 1)
+		lac_king_moves[i] += 0b1 << (i - row_length_lac + 1)
 	}
 	// down
 	if row > 0 {
-		l.king_moves[i] += 0b1 << (i - row_length_lac)
+		lac_king_moves[i] += 0b1 << (i - row_length_lac)
 	}
 	// down left
 	if row > 0 && col > 0 {
-		l.king_moves[i] += 0b1 << (i - row_length_lac - 1)
+		lac_king_moves[i] += 0b1 << (i - row_length_lac - 1)
 	}
 	// left
 	if col > 0 {
-		l.king_moves[i] += 0b1 << (i - 1)
+		lac_king_moves[i] += 0b1 << (i - 1)
 	}
 	// left up
 	if row < 5 && col > 0 {
-		l.king_moves[i] += 0b1 << (i + row_length_lac - 1)
+		lac_king_moves[i] += 0b1 << (i + row_length_lac - 1)
 	}
 }
 
@@ -173,16 +177,16 @@ func (l *LosAlamosChess) GetNumberOfMoves() int {
 	return l.number_of_moves
 }
 
-func (l *LosAlamosChess) PossibleMoves(moves []Move) int {
-	return l.generate_moves(moves)
+func (l *LosAlamosChess) PossibleMoves() []Move {
+	return l.moves[:l.move_count]
 }
 
 func (l *LosAlamosChess) generate_moves(buffer []Move) int {
 	n := 0
 
 	own_pawns := l.white_pawns
-	own_pawns_moves := l.white_pawns_moves
-	own_pawns_capture := l.white_pawns_capture
+	own_pawns_moves := lac_white_pawns_moves
+	own_pawns_capture := lac_white_pawns_capture
 	own_rooks := l.white_rooks
 	own_knights := l.white_knights
 	own_queen := l.white_queen
@@ -192,8 +196,8 @@ func (l *LosAlamosChess) generate_moves(buffer []Move) int {
 	white_to_play := true
 	if !l.whiteToPlay {
 		own_pawns = l.black_pawns
-		own_pawns_moves = l.black_pawns_moves
-		own_pawns_capture = l.black_pawns_capture
+		own_pawns_moves = lac_black_pawns_moves
+		own_pawns_capture = lac_black_pawns_capture
 		own_rooks = l.black_rooks
 		own_knights = l.black_knights
 		own_queen = l.black_queen
@@ -220,7 +224,7 @@ func (l *LosAlamosChess) generate_moves(buffer []Move) int {
 		}
 		// knights
 		if own_knights&(0b1<<i) > 0 {
-			moves_possible := l.knights_moves[i] & ^own_occupancy
+			moves_possible := lac_knights_moves[i] & ^own_occupancy
 			n = l.move_bitboard_to_moves(i, moves_possible, buffer, n)
 		}
 		// queen
@@ -230,7 +234,7 @@ func (l *LosAlamosChess) generate_moves(buffer []Move) int {
 		}
 		// king
 		if own_king&(0b1<<i) > 0 {
-			moves_possible := l.king_moves[i] & (^own_occupancy)
+			moves_possible := lac_king_moves[i] & (^own_occupancy)
 			n = l.move_bitboard_to_moves(i, moves_possible, buffer, n)
 		}
 	}
@@ -480,6 +484,11 @@ func (l *LosAlamosChess) ExecuteMove(move Move) {
 	l.whiteToPlay = !l.whiteToPlay
 
 	l.set_occupancy_boards()
+	l.move_count = l.generate_moves(l.moves[:])
+}
+
+func (l *LosAlamosChess) UndoMove(move Move) {
+	panic("Not implemented")
 }
 
 func (l *LosAlamosChess) set_occupancy_boards() {
@@ -493,9 +502,9 @@ var moves = [100]Move{}
 
 func (l *LosAlamosChess) CreateView(white bool) ChessVariation {
 	copy := *l
-	n := l.PossibleMoves(moves[:])
+	moves := l.PossibleMoves()
 	vision := uint(0)
-	for _, move := range moves[:n] {
+	for _, move := range moves {
 		vision |= (1 << move.To)
 	}
 	if white {
@@ -520,6 +529,10 @@ func (l *LosAlamosChess) CreateView(white bool) ChessVariation {
 	copy.set_occupancy_boards()
 
 	return &copy
+}
+
+func (l *LosAlamosChess) ViewHash(white bool) uint64 {
+	return 0
 }
 
 func (l *LosAlamosChess) GameOver() (bool, int) {
@@ -566,13 +579,13 @@ func (l *LosAlamosChess) Heuristic(white bool) float64 {
 	white_mobility := 0
 	black_mobility := 0
 	if white {
-		white_mobility = l.PossibleMoves(moves[:])
+		white_mobility = len(l.PossibleMoves())
 		l.whiteToPlay = !l.whiteToPlay
-		black_mobility = l.PossibleMoves(moves[:])
+		black_mobility = len(l.PossibleMoves())
 	} else {
-		black_mobility = l.PossibleMoves(moves[:])
+		black_mobility = len(l.PossibleMoves())
 		l.whiteToPlay = !l.whiteToPlay
-		white_mobility = l.PossibleMoves(moves[:])
+		white_mobility = len(l.PossibleMoves())
 	}
 	avg_material := (white_material + black_material) / 2
 	value = (white_material - black_material + float64(l.pawn_structure()) + 0.1*float64(white_mobility-black_mobility)) / avg_material
