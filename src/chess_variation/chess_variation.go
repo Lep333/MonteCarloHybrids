@@ -16,6 +16,7 @@ type ChessVariation interface {
 	UndoMove(move Move)
 	CreateView(white bool) ChessVariation
 	ViewHash(white bool) uint64
+	Hash() uint64
 	GameOver() (bool, int)
 	Heuristic(white bool) float64
 	String() string

@@ -11,14 +11,14 @@ var black_pawns_moves [no_fields_dpc]uint
 var black_pawns_capture [no_fields_dpc]uint
 
 type DarkPawnChess struct {
+	moves           [20]Move
 	white_pawns     uint
 	black_pawns     uint
-	whiteToPlay     bool
 	number_of_moves int
 	view_mask_white uint64
 	view_mask_black uint64
-	moves           [20]Move
 	move_count      int
+	whiteToPlay     bool
 }
 
 func (d *DarkPawnChess) InitGame() {
@@ -115,7 +115,8 @@ func (d *DarkPawnChess) PossibleMoves() []Move {
 		d.move_count = 0
 		return d.moves[:d.move_count]
 	}
-	return d.moves[:d.move_count]
+	move_count := d.get_moves(d.moves[:])
+	return d.moves[:move_count]
 }
 
 func (d *DarkPawnChess) get_moves(moves []Move) int {
@@ -246,6 +247,10 @@ func (d *DarkPawnChess) ViewHash(white bool) uint64 {
 		hash |= uint64(d.black_pawns) << 32
 	}
 	return hash
+}
+
+func (d *DarkPawnChess) Hash() uint64 {
+	return (uint64(d.black_pawns) << 32) | uint64(d.white_pawns)
 }
 
 func (d *DarkPawnChess) Heuristic(white bool) float64 {

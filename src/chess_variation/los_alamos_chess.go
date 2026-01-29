@@ -535,6 +535,10 @@ func (l *LosAlamosChess) ViewHash(white bool) uint64 {
 	return 0
 }
 
+func (l *LosAlamosChess) Hash() uint64 {
+	return 0
+}
+
 func (l *LosAlamosChess) GameOver() (bool, int) {
 	// black wins
 	if l.white_king == 0 {

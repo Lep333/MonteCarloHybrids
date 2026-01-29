@@ -3,12 +3,13 @@ package player
 import (
 	"math"
 	"math/rand"
+	"monte_carlo_hybrids/chess_variation"
 	chess "monte_carlo_hybrids/chess_variation"
 	"time"
 )
 
 const NODE_MAX = 100000
-const BELIEFS_MAX = 1000
+const BELIEFS_MAX = 200
 
 type POMCP struct {
 	Root            *Node
@@ -19,6 +20,8 @@ type POMCP struct {
 	NBeliefs        int
 	Nodes           [NODE_MAX]Node
 	node_count      uint
+	beliefs         [NODE_MAX]Belief
+	child_pool      [NODE_MAX][1000]*Node
 }
 
 type Combined_Key struct {
@@ -42,26 +45,49 @@ type Settings struct {
 
 type Node struct {
 	parent      *Node
-	children    [1000]*Node
-	child_count int16
+	children    *[1000]*Node
+	beliefs     *Belief
 	value       float64    // v
 	visits      int        // n
-	move        chess.Move // a
 	observation uint64     // o
-	beliefs     Belief     // B
+	move        chess.Move // a
+	child_count int16
+	free        bool
+	expanded    bool
 }
 
 type Belief struct {
 	beliefs      [BELIEFS_MAX]chess.ChessVariation
 	belief_count int64
+	allocated    bool
 }
 
-//var Moves = [100]chess.Move{}
-
 func (p *POMCP) get_node_address() *Node {
-	// TODO: add kill flag
-	node := &p.Nodes[p.node_count]
-	p.node_count++
+	found := false
+	counter := NODE_MAX
+	var node *Node
+	for {
+		if found {
+			break
+		}
+		node = &p.Nodes[p.node_count]
+		if node.free {
+			found = true
+			node.children = &p.child_pool[p.node_count]
+			node.beliefs = &p.beliefs[p.node_count]
+			node.beliefs.belief_count = 0
+			node.child_count = 0
+			node.free = false
+		}
+		p.node_count++
+		if p.node_count == NODE_MAX {
+			p.node_count = 0
+		}
+		if counter == 0 {
+			break
+		}
+		counter--
+	}
 	if p.node_count == NODE_MAX {
 		p.node_count = 0
 	}
@@ -79,12 +105,14 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 		p.Last_move = chess.Move{}
 	}
 	p.Init_pomcp(board, whiteToPlay)
-	prune_tree_and_update_beliefs(p, board)
+	p.prune_tree_and_update_beliefs(board)
 	visits_before := p.Root.visits
+
 	selected_move := p.search(p.Root)
 	p.Rollouts = p.Root.visits - visits_before
 	p.NBeliefs = int(p.Root.beliefs.belief_count)
 	if (selected_move == chess.Move{}) {
+		println("had to fallback to random move!")
 		selected_move = random_element(board.PossibleMoves())
 	}
 	p.Last_move = selected_move
@@ -93,45 +121,44 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 
 func (p *POMCP) Init_pomcp(board chess.ChessVariation, whiteToPlay bool) {
 	if p.Root == nil {
-		particle_filter := Belief{}
+		p.Nodes = [NODE_MAX]Node{}
+		p.beliefs = [NODE_MAX]Belief{}
+		p.node_count = 0
+		p.free_nodes()
 		if board.GetNumberOfMoves() == 0 {
 			init_board := board.ReturnBoard()
 			init_board.InitGame()
-			particle_filter.beliefs[particle_filter.belief_count] = init_board
-			particle_filter.belief_count++
 			root := p.get_node_address()
-			root.beliefs = particle_filter
+			root.beliefs.beliefs[0] = init_board
+			root.beliefs.belief_count++
 			p.Root = root
 		} else if board.GetNumberOfMoves() == 1 {
 			init_board := board.ReturnBoard()
 			init_board.InitGame()
+			root := p.get_node_address()
 			for _, move := range init_board.PossibleMoves() {
 				game := init_board.ReturnBoard()
 				game.ExecuteMove(move)
-				particle_filter.beliefs[particle_filter.belief_count] = game
-				particle_filter.belief_count++
+				root.beliefs.beliefs[root.beliefs.belief_count] = game
+				root.beliefs.belief_count++
 			}
-			root := p.get_node_address()
-			root.beliefs = particle_filter
 			p.Root = root
 		}
+		p.Root.expanded = true
 		p.Started_playing = whiteToPlay
 	}
 }
 
-func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
+func (p *POMCP) prune_tree_and_update_beliefs(board chess.ChessVariation) {
 	if p.Last_move != (chess.Move{}) {
 		white := board.GetNumberOfMoves()%2 == 0
 		board_hash := board.ViewHash(white)
 		var new_root *Node
-		for _, child := range p.Root.children {
+		for _, child := range p.Root.children[:p.Root.child_count] {
 			if child.move == p.Last_move && child.observation == board_hash {
 				new_root = child
 				break
 			}
-		}
-		if new_root != nil {
-			new_root.parent = nil
 		}
 		if new_root == nil {
 			consistent_beliefs := Belief{}
@@ -143,36 +170,59 @@ func prune_tree_and_update_beliefs(p *POMCP, board chess.ChessVariation) {
 				}
 			}
 			root := p.get_node_address()
-			root.beliefs = consistent_beliefs
+			p.Root.beliefs = &consistent_beliefs
 			new_root = root
 		}
-		p.Root = new_root // TODO: find
-		println(p.Root.beliefs.belief_count)
+		p.Root = new_root
+		p.free_nodes()
 		// update consistent beliefs
 		consistent_beliefs := Belief{}
 		// consistent_beliefs[] = append(consistent_beliefs, board)
-		for _, belief := range p.Root.beliefs.beliefs[:p.Root.beliefs.belief_count] {
-			println(belief.ViewHash(white), board.ViewHash(white))
-			if belief.ViewHash(white) == board.ViewHash(white) {
-				consistent_beliefs.beliefs[consistent_beliefs.belief_count] = belief
-				consistent_beliefs.belief_count++
+		if p.Root.beliefs == nil || p.Root.beliefs.belief_count == 0 {
+			consistent_beliefs.beliefs[0] = board
+			consistent_beliefs.belief_count++
+			println("wie geths?")
+		} else {
+			for _, belief := range p.Root.beliefs.beliefs[:p.Root.beliefs.belief_count] {
+				//println(belief.ViewHash(white), board.ViewHash(white))
+				if belief.ViewHash(white) == board.ViewHash(white) {
+					consistent_beliefs.beliefs[consistent_beliefs.belief_count] = belief
+					consistent_beliefs.belief_count++
+				}
 			}
 		}
-		if consistent_beliefs.belief_count == 0 {
-			consistent_beliefs.beliefs[0] = board
-		}
-		p.Root.beliefs = consistent_beliefs
+		p.Root.beliefs = &consistent_beliefs
+		println("no beliefs", p.Root.beliefs.belief_count)
+	}
+}
+
+func (p *POMCP) free_nodes() {
+	for i := 0; i < NODE_MAX; i++ {
+		p.Nodes[i].free = true
+	}
+	if p.Root != nil {
+		lock_nodes(p.Root)
+	}
+}
+
+func lock_nodes(node *Node) {
+	node.free = false
+	for _, child := range node.children[:node.child_count] {
+		lock_nodes(child)
 	}
 }
 
 func (p *POMCP) search(h *Node) chess.Move {
 	start_time := time.Now()
-	//for i := 0; i < 50000; i++ {
+	counter := 0
+	//for i := 0; i < 10000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
-		s := random_belief(h.beliefs)
+		s := random_belief(h.beliefs.beliefs[:h.beliefs.belief_count])
 		copy := s.ReturnBoard()
 		p.simulate(copy, h, 0, p.Settings.Gamma)
+		counter++
 	}
+	print("rollouts: ", counter, "beliefs: ", h.beliefs.belief_count)
 	return get_best_move(h)
 }
 
@@ -183,16 +233,12 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 	}
 
 	white := s.GetNumberOfMoves()%2 == 0
-	if h.parent != nil {
-		child := p.get_children(h.parent, h.move, h.observation)
-		if child == nil { // expand
-			h.parent.children[h.parent.child_count] = h
-			h.parent.child_count++
-			if p.Settings.Prior_hybrid != nil {
-				return p.Settings.Prior_hybrid.Prior(h, s)
-			}
-			return p.rollout(s, depth, discount)
+	if !h.expanded {
+		h.expanded = true
+		if p.Settings.Prior_hybrid != nil {
+			return p.Settings.Prior_hybrid.Prior(h, s)
 		}
+		return p.rollout(s, depth, discount)
 	}
 	var a chess.Move
 	if over, _ := s.GameOver(); over {
@@ -205,49 +251,72 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 	}
 	s.ExecuteMove(a)
 	moves := s.PossibleMoves()
-	if len(moves) > 0 {
-		corrective := CorrectiveSelection{0.6, 0.05}
-		opponent_move := corrective.Select(s)
-		//opponent_move := random_element(s.PossibleMoves())
-		s.ExecuteMove(opponent_move)
-	}
+	p.opponent_modelling(s, moves)
 	o := s.ViewHash(white)
-	ha := p.get_children(h, a, o) // s needs to be an observation?
+	ha := p.get_children(h, a, o)
 	if ha == nil {
-		ha = p.get_node_address()
-		ha.move = a
-		ha.observation = o
-		ha.parent = h
+		// TODO: start rollout if no node available
+		ha = p.create_node(h, a, o)
 	}
-	if depth == 0 {
-		if (ha.beliefs == Belief{}) {
-			ha.beliefs = Belief{}
-		}
-		got_belief_already := false
-		for _, belief := range ha.beliefs.beliefs[:ha.beliefs.belief_count] {
-			if belief == s {
-				got_belief_already = true
-				break
-			}
-		}
-		if !got_belief_already {
-			ha.beliefs.beliefs[ha.beliefs.belief_count] = s
-			ha.beliefs.belief_count++
-			if ha.beliefs.belief_count == BELIEFS_MAX {
-				ha.beliefs.belief_count = 0
-			}
-		}
-	}
+	p.set_beliefs(ha, s)
 	reward := p.Settings.Gamma * p.simulate(s, ha, depth+1, discount)
+
 	h.visits++
 	ha.visits++
 	ha.value = ha.value + (reward-ha.value)/float64(ha.visits)
 	return reward
 }
 
+func (p *POMCP) opponent_modelling(s chess_variation.ChessVariation, moves []chess.Move) {
+	if len(moves) > 0 {
+		corrective := CorrectiveSelection{0.6, 0.05}
+		opponent_move := corrective.Select(s)
+		//opponent_move := random_element(s.PossibleMoves())
+		s.ExecuteMove(opponent_move)
+	}
+}
+
+func (p *POMCP) create_node(h *Node, a chess.Move, o uint64) *Node {
+	ha := p.get_node_address()
+	ha.move = a
+	ha.observation = o
+	ha.parent = h
+	ha.visits = 0
+	ha.value = 0
+	ha.free = false
+	if h.child_count < 1000 {
+		h.children[h.child_count] = ha
+		h.child_count++
+	}
+	return ha
+}
+
+func (p *POMCP) set_beliefs(ha *Node, s chess.ChessVariation) {
+	got_belief_already := false
+	if ha.beliefs.belief_count != 0 {
+		state_hash := s.Hash()
+		for _, belief := range ha.beliefs.beliefs[:ha.beliefs.belief_count] {
+			if belief.Hash() == state_hash {
+				got_belief_already = true
+				break
+			}
+		}
+	}
+	if !got_belief_already {
+		ha.beliefs.beliefs[ha.beliefs.belief_count] = s.ReturnBoard()
+		ha.beliefs.belief_count++
+		if ha.beliefs.belief_count == BELIEFS_MAX {
+			ha.beliefs.belief_count = 0
+		}
+	}
+}
+
 func (p *POMCP) get_children(n *Node, a chess.Move, o uint64) *Node {
 	var child *Node
 
+	if n.child_count == 0 {
+		return child
+	}
 	for _, node := range n.children[:n.child_count] {
 		if node.move == a && node.observation == o {
 			return node
@@ -261,7 +330,6 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int, discount float64) flo
 	if discount < p.Settings.Epsilon {
 		return 0
 	}
-
 	// early playout termination?
 	if p.Settings.Early_playout_termination != nil {
 		termination, value := p.Settings.Early_playout_termination.
@@ -306,12 +374,13 @@ func random_element[T any](collection []T) T {
 	return collection[selected_index]
 }
 
-func random_belief(b Belief) chess.ChessVariation {
+func random_belief(b []chess.ChessVariation) chess.ChessVariation {
 	i := 0
-	if b.belief_count > 1 {
-		i = rand.Intn(int(b.belief_count))
+	no_beliefs := len(b)
+	if no_beliefs > 1 {
+		i = rand.Intn(no_beliefs)
 	}
-	for _, value := range b.beliefs[:b.belief_count] {
+	for _, value := range b {
 		if i == 0 {
 			return value
 		}
@@ -349,6 +418,7 @@ func get_best_move(h *Node) chess.Move {
 			best_action_value = value[0]
 		}
 	}
+	print(best_action_value)
 	return best_action
 }
 
@@ -426,6 +496,9 @@ func (p *POMCP) get_most_promising_action_by_ucb(s chess.ChessVariation, h *Node
 
 	if not_visited {
 		return random_element(not_visited_action[:not_visited_count])
+	}
+	if max_child == nil {
+		return random_element(s.PossibleMoves())
 	}
 	return max_child.move
 }
