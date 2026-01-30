@@ -1,9 +1,21 @@
 package chess_variation
 
+type Piece int
+
+const (
+	Pawn Piece = iota
+	Rook
+	Knight
+	Bishop
+	Queen
+	King
+)
+
 type Move struct {
-	From    int8
-	To      int8
-	Capture bool
+	From          int8
+	To            int8
+	Capture       bool
+	CapturedPiece Piece
 }
 
 type ChessVariation interface {
