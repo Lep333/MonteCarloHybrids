@@ -242,8 +242,11 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 	o := s.ViewHash(white)
 	ha := p.get_children(h, a, o)
 	if ha == nil {
-		// TODO: start rollout if no node available
 		ha = p.create_node(h, a, o)
+		if ha == nil {
+			// TODO: start rollout if no node available
+			return p.rollout(s, depth, discount)
+		}
 	}
 	reward := p.Settings.Gamma * p.simulate(s, ha, depth+1, discount)
 
@@ -255,9 +258,9 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 
 func (p *POMCP) opponent_modelling(s chess_variation.ChessVariation, moves []chess.Move) {
 	if len(moves) > 0 {
-		corrective := CorrectiveSelection{0.6, 0.05}
-		opponent_move := corrective.Select(s)
-		//opponent_move := random_element(s.PossibleMoves())
+		//corrective := CorrectiveSelection{0.6, 0.05}
+		//opponent_move := corrective.Select(s)
+		opponent_move := random_element(s.PossibleMoves())
 		s.ExecuteMove(opponent_move)
 	}
 }
