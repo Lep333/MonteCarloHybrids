@@ -153,6 +153,10 @@ func (p *POMCP) prune_tree_and_update_beliefs(board chess.ChessVariation) {
 		new_root := p.get_children(p.Root, p.Last_move, board_hash)
 		if new_root == nil {
 			root := p.get_node_address()
+			if root == nil {
+				root = &p.Nodes[0]
+				root.child_count = 0
+			}
 			new_root = root
 		}
 		// update consistent beliefs
