@@ -65,16 +65,17 @@ func (p *POMCP) get_node_address() *Node {
 	found := false
 	counter := NODE_MAX
 	var node *Node
+	var temp_node *Node
 	for {
 		if found {
 			break
 		}
-		node = &p.Nodes[p.node_count]
-		if node.free {
+		temp_node = &p.Nodes[p.node_count]
+		if temp_node.free {
 			found = true
-			node.children = &p.child_pool[p.node_count]
-			node.child_count = 0
-			node.free = false
+			temp_node.children = &p.child_pool[p.node_count]
+			temp_node.child_count = 0
+			temp_node.free = false
 		}
 		p.node_count++
 		if p.node_count == NODE_MAX {
@@ -87,6 +88,9 @@ func (p *POMCP) get_node_address() *Node {
 	}
 	if p.node_count == NODE_MAX {
 		p.node_count = 0
+	}
+	if found {
+		node = temp_node
 	}
 	return node
 }
@@ -244,7 +248,7 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 	if ha == nil {
 		ha = p.create_node(h, a, o)
 		if ha == nil {
-			// TODO: start rollout if no node available
+			// start rollout if no node available
 			return p.rollout(s, depth, discount)
 		}
 	}
