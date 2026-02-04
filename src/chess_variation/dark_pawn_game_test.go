@@ -109,14 +109,14 @@ func TestPossibleMovesRightCapture(t *testing.T) {
 func TestCreateView(t *testing.T) {
 	game := DarkPawnChess{}
 	game.InitGame()
-	view := game.CreateView()
+	view := game.CreateView(true)
 	if dpc, ok := view.(*DarkPawnChess); ok {
 		if dpc.black_pawns > 0 {
 			t.Errorf("There should be no black pawns visible!")
 		}
 		fmt.Printf("%v", dpc)
 		dpc.black_pawns += 0b11111 << 5
-		view = dpc.CreateView()
+		view = dpc.CreateView(true)
 		dpc, _ = view.(*DarkPawnChess)
 		if dpc.black_pawns != 0b11111<<5 {
 			t.Errorf("There should be 5 black pawns visible!")
@@ -124,7 +124,7 @@ func TestCreateView(t *testing.T) {
 		fmt.Printf("%v", dpc)
 		dpc.white_pawns = 0b00100
 		dpc.black_pawns = 0b00100 << 5
-		view = dpc.CreateView()
+		view = dpc.CreateView(true)
 		dpc, _ = view.(*DarkPawnChess)
 		if dpc.black_pawns != 0b00100<<5 {
 			t.Errorf("There should be one black pawn visible!")
@@ -133,7 +133,7 @@ func TestCreateView(t *testing.T) {
 		dpc.white_pawns = 0b100010111
 		dpc.black_pawns = 0b11110 << 20
 		dpc.black_pawns += 0b1 << 15
-		view = dpc.CreateView()
+		view = dpc.CreateView(true)
 		dpc, _ = view.(*DarkPawnChess)
 		if dpc.black_pawns != 0 {
 			t.Errorf("There should be no black pawn visible!")

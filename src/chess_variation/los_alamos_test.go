@@ -18,7 +18,7 @@ func TestLosAlamosInitGame(t *testing.T) {
 
 	if game.white_knights != 0b010010 ||
 		game.black_knights != 0b010010<<(5*row_length_lac) ||
-		game.knights_moves[1] != 20992 {
+		lac_knights_moves[1] != 20992 {
 		t.Errorf("Knight Bitboards are not correctly initialized!")
 	}
 
@@ -62,16 +62,14 @@ func TestLosAlamosExecuteMove(t *testing.T) {
 	game.InitGame()
 
 	move := Move{From: 1, To: 14, Capture: false}
-	new_board := game.ExecuteMove(move)
-	lac, _ := new_board.(*LosAlamosChess)
-	if lac.white_knights&uint(0b1<<14) == 0 {
+	game.ExecuteMove(move)
+	if game.white_knights&uint(0b1<<14) == 0 {
 		t.Errorf("Found no knight on field 14!")
 	}
 
 	move = Move{From: 0, To: 10, Capture: false}
-	new_board = game.ExecuteMove(move)
-	lac, _ = new_board.(*LosAlamosChess)
-	if lac.white_rooks&uint(0b1<<10) == 0 {
+	game.ExecuteMove(move)
+	if game.white_rooks&uint(0b1<<10) == 0 {
 		t.Errorf("Found no rook on field 10!")
 	}
 }
@@ -112,21 +110,54 @@ func TestLosAlamosPossibleMoves(t *testing.T) {
 	}
 
 	move := Move{From: 6, To: 12, Capture: false}
-	new_board := game.ExecuteMove(move)
-	moves = new_board.PossibleMoves()
+	game.ExecuteMove(move)
+	moves = game.PossibleMoves()
 	possible_moves = len(moves)
 	if possible_moves != starting_move_count {
 		t.Errorf("There should be %v possible moves, got %v",
 			starting_move_count, possible_moves)
 	}
 	move = Move{From: 24, To: 18, Capture: false}
-	new_board = new_board.ExecuteMove(move)
-	moves = new_board.PossibleMoves()
+	game.ExecuteMove(move)
+	moves = game.PossibleMoves()
 	possible_moves = len(moves)
 
 	if possible_moves != 9 {
 		t.Errorf("There should be %v possible moves, got %v",
 			9, possible_moves)
+	}
+}
+
+func TestLosAlamosPossibleMovesPawn(t *testing.T) {
+	starting_move_count := 10
+	game := LosAlamosChess{}
+	game.InitGame()
+
+	moves := game.PossibleMoves()
+	possible_moves := len(moves)
+	if possible_moves != starting_move_count {
+		t.Errorf("There should be %v possible moves, got %v",
+			starting_move_count, possible_moves)
+	}
+
+	move := Move{From: 1, To: 14, Capture: false}
+	game.ExecuteMove(move)
+	moves = game.PossibleMoves()
+	possible_moves = len(moves)
+	if possible_moves != starting_move_count {
+		t.Errorf("There should be %v possible moves, got %v",
+			starting_move_count, possible_moves)
+	}
+	move = Move{From: 24, To: 18, Capture: false}
+	game.ExecuteMove(move)
+	moves = game.PossibleMoves()
+	possible_moves = len(moves)
+	error_move := Move{From: 11, To: 16, Capture: true}
+
+	for _, move := range moves {
+		if move == error_move {
+			t.Errorf("Move should not be possible.")
+		}
 	}
 }
 
@@ -238,8 +269,8 @@ func TestLosAlamosPossibleMovesKing(t *testing.T) {
 	game.black_pawns -= 1 << 29
 	game.set_occupancy_boards()
 	move := Move{From: 1, To: 12, Capture: false}
-	new_board := game.ExecuteMove(move)
-	poss_moves := new_board.PossibleMoves()
+	game.ExecuteMove(move)
+	poss_moves := game.PossibleMoves()
 	no_actual_moves = len(poss_moves)
 	no_expected_moves = 10
 	if no_actual_moves != no_expected_moves {
@@ -253,7 +284,7 @@ func TestLosAlamosCreateView(t *testing.T) {
 
 	expected_moves_no := 12
 	game.white_pawns += 1 << 20
-	view_board := game.CreateView()
+	view_board := game.CreateView(true)
 	possible_moves := view_board.PossibleMoves()
 	actual_moves_no := len(possible_moves)
 
@@ -265,7 +296,7 @@ func TestLosAlamosCreateView(t *testing.T) {
 	game.whiteToPlay = false
 	game.white_pawns -= 1 << 20
 	game.black_pawns += 1 << 17
-	view_board = game.CreateView()
+	view_board = game.CreateView(true)
 	possible_moves = view_board.PossibleMoves()
 	actual_moves_no = len(possible_moves)
 
@@ -288,8 +319,8 @@ func TestLosAlamosCreateView(t *testing.T) {
 	game.black_knights -= 1 << 34
 	game.set_occupancy_boards()
 	move := Move{From: 1, To: 12, Capture: false}
-	new_board := game.ExecuteMove(move).CreateView()
-	poss_moves := new_board.PossibleMoves()
+	game.ExecuteMove(move)
+	poss_moves := game.PossibleMoves()
 	no_actual_moves := len(poss_moves)
 	no_expected_moves := 8
 	if no_actual_moves != no_expected_moves {
@@ -302,33 +333,33 @@ func TestLosAlamosCreateView2(t *testing.T) {
 	game.InitGame()
 
 	move := Move{From: 11, To: 17, Capture: false}
-	new_state := game.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 34, To: 23, Capture: false}
-	new_state = new_state.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 7, To: 13, Capture: false}
-	new_state = new_state.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 35, To: 34, Capture: false}
-	new_state = new_state.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 10, To: 16, Capture: false}
-	new_state = new_state.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 31, To: 18, Capture: false}
-	new_state = new_state.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 13, To: 18, Capture: true}
-	new_state = new_state.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 23, To: 10, Capture: false}
-	new_state = new_state.ExecuteMove(move)
+	game.ExecuteMove(move)
 
 	move = Move{From: 3, To: 10, Capture: true}
-	new_state = new_state.ExecuteMove(move)
-	expected_possible_moves := len(new_state.PossibleMoves())
-	moves := new_state.CreateView().PossibleMoves()
+	game.ExecuteMove(move)
+	expected_possible_moves := len(game.PossibleMoves())
+	moves := game.CreateView(true).PossibleMoves()
 	actual_possible_moves := len(moves)
 	if expected_possible_moves != actual_possible_moves {
 		t.Errorf("Error")

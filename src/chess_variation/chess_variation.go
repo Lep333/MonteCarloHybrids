@@ -6,9 +6,9 @@ const (
 	Pawn Piece = iota
 	Rook
 	Knight
-	Bishop
 	Queen
 	King
+	Bishop
 )
 
 type Move struct {

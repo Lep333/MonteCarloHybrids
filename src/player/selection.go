@@ -35,9 +35,9 @@ func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_var
 
 	var move_scores_count uint
 	for _, move := range moves {
-		s.ExecuteMove(move)
-		value := s.Heuristic(white)
-		s.UndoMove(move)
+		copy := s.ReturnBoard()
+		copy.ExecuteMove(move)
+		value := copy.Heuristic(white)
 		if value > c.Bound {
 			return move
 		} else if value <= default_value {

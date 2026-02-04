@@ -125,7 +125,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := white_pawns_moves[i] & ^d.black_pawns & ^d.white_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(i + row_length_dpc), false}
+				move := Move{int8(i), int8(i + row_length_dpc), false, Pawn}
 				moves[n] = move
 				n++
 			}
@@ -133,7 +133,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 			capture_possible := white_pawns_capture[i] & d.black_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position), true}
+					move := Move{int8(i), int8(position), true, Pawn}
 					moves[n] = move
 					n++
 				}
@@ -143,7 +143,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 		if !d.whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
 			move_to_possible := black_pawns_moves[i] & ^d.white_pawns & ^d.black_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(i - row_length_dpc), false}
+				move := Move{int8(i), int8(i - row_length_dpc), false, Pawn}
 				moves[n] = move
 				n++
 			}
@@ -151,7 +151,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 			capture_possible := black_pawns_capture[i] & d.white_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position), true}
+					move := Move{int8(i), int8(position), true, Pawn}
 					moves[n] = move
 					n++
 				}
