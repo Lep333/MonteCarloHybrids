@@ -21,7 +21,7 @@ def main():
         if i == 0:
             continue
         fields = line.replace("\n", "").split(",")
-        player1, player2, result, settings1, settings2, moves, no_rollouts = fields
+        player1, player2, result, settings1, settings2, moves, no_rollouts, no_beliefs = fields
         white = [0,0,0]
         black = [0,0,0]
         if int(result) == 1:
@@ -113,92 +113,14 @@ def print_heatmap(result_dict: dict[list]):
 def print_hybrids(result_dict: dict[list]):
     diagrams = [
         (
-            "POMCP-UCB",
+            "LAC_UCT",
             [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
         ),
         (
-            "POMCP-Rollout-Capture",
-            [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
-            "Schlagpräfarenz-Hybrid Siegesrate",
-            "Schlagpräfarenz in %",
-        ),
-        (
-            "POMCP-Greedy",
-            [r'\"Rollout_selection\":{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
-            "Greedy-Hybrid Siegesrate",
-            "Zufallszug in %"
-        ),
-        (
-            "POMCP-Corrective",
-            [r'\"Rollout_selection\":{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
-            "Korrektur-Hybrid Siegesrate",
-            "Grenzwert um Spiel als Gewonnen anzusehen"
-        ),
-        (
-            "POMCP-EPT",
-            [r'\"Early_playout_termination\":{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Early-Playout-Termination-Hybrid Siegesrate",
-            "Abbruchstiefe"
-        ),
-        (
-            "POMCP-IR",
-            [r'\"Rollout_selection"\:\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Informierter Rollout Siegesrate",
-            "Abbruchstiefe"
-        ),
-        (
-            "POMCP-Evaluation-Cut-Off",
-            [r'\"Early_playout_termination"\:\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Evaluation Cut Off Siegesrate",
-            "Abbruchs-Schwellwert"
-        ),
-        (
-            "POMCP-KBest",
-            [r'\"Rollout_selection"\:\{\"K\":([0-9]+(?:\.[0-9]+)?)'],
-            "Move Ordering & K-Best",
-            "k"
-        ),
-        (
-            "POMCP-Mixed",
-            [
-                r'\"Selection_hybrid"\:\{\"Bound\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'
-            ],
-            "Mixed-Hybrid Siegesrate",
-            ["Epsilon", "Schwellwert"]
-        ),
-        (
-            "POMCP-IR",
-            [
-                r'\"Rollout_selection\":{"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Rollout_selection\":{"Search_depth\":[0-9]* \"Epsilon\":([0-9]+(?:\.[0-9]+)?)'
-            ],
-            "POMCP with informed rollouts",
-            ["Epsilon", "Suchtiefe"]
-        ),
-        (
-            "DPC-POMCP-IC",
-            [
-                r'\"Early_playout_termination\"\:\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)'
-            ],
-            "POMCP with informed rollouts",
-            ["Suchtiefe", "Abbruchstiefe"]
-        ),
-        (
-            "DPC-POMCP-IP",
-            [
-                r'\"Prior_hybrid\"\:\{\"Weight\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)'
-            ],
-            "POMCP with informed rollouts",
-            ["Suchtiefe", "Gewichtung"]
-        ),
-        (
-            "LAC-POMCP-UCB",
-            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "LAC_OM",
+            [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
         ),
