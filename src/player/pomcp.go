@@ -230,9 +230,8 @@ func (p *POMCP) search(h *Node) chess.Move {
 	return get_best_move(h)
 }
 
-func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount float64) float64 {
-	discount *= discount
-	if depth > 100 {
+func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, current_gamma float64) float64 {
+	if current_gamma < p.Settings.Epsilon || depth > 100 {
 		return 0
 	}
 
@@ -242,11 +241,11 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 		if p.Settings.Prior_hybrid != nil {
 			return p.Settings.Prior_hybrid.Prior(h, s)
 		}
-		return p.rollout(s, depth, discount)
+		return p.rollout(s, depth, current_gamma)
 	}
 	var a chess.Move
 	if over, _ := s.GameOver(); over {
-		return p.rollout(s, depth, discount)
+		return p.rollout(s, depth, current_gamma)
 	}
 	if p.Settings.Selection_hybrid != nil {
 		a = p.Settings.Selection_hybrid.Select(s)
@@ -262,10 +261,10 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 		ha = p.create_node(h, a, o)
 		if ha == nil {
 			// start rollout if no node available
-			return p.rollout(s, depth, discount)
+			return p.rollout(s, depth, current_gamma)
 		}
 	}
-	reward := p.Settings.Gamma * p.simulate(s, ha, depth+1, discount)
+	reward := p.Settings.Gamma * p.simulate(s, ha, depth+1, current_gamma*p.Settings.Gamma)
 
 	h.visits++
 	ha.visits++

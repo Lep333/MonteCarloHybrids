@@ -124,6 +124,60 @@ def print_hybrids(result_dict: dict[list]):
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
         ),
+        (
+            "LAC_GREEDY",
+            [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
+            "Greedy-Hybrid",
+            "Epsilon"
+        ),
+        (
+            "LAC_CORRECTIVE",
+            [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
+            "Korrektur",
+            "Schwellwert Zug zu wählen"
+        ),
+        (
+            "LAC_EPT",
+            [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
+            "Early-Playout-Termination",
+            "Abbruchstiefe"
+        ),
+        (
+            "LAC_EVALUATION_CUT_OFF",
+            [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
+            "Frühzeitige Abbrüche",
+            "Abbruchsschwellwert"
+        ),
+        (
+            "LAC_ROLLOUT_PREF",
+            [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
+            "Schlagpräfarenz",
+            "Schlagwahrscheinlichkeit"
+        ),
+        (
+            "LAC_K_BEST",
+            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+            "K-Beste",
+            "k"
+        ),
+        (
+            "LAC_INFORMED_ROLLOUTS",
+            [
+                r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+            ],
+            "Vielversprechende Abbrüche",
+            ["Suchtiefe", "Abbruchstiefe"]
+        ),
+        (
+            "LAC_INFORMED_ROLLOUTS2",
+            [
+                r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+             ],
+            "Vielversprechende Rollouts",
+            ["Epsilon", "Suchtiefe"]
+        ),
     ]
 
     for name, reg, title, x_axis_label in diagrams:
