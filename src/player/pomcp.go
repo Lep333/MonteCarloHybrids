@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const NODE_MAX = 100000
+const NODE_MAX = 80000
 const BELIEFS_MAX = 10000
 
 type POMCP struct {
@@ -41,6 +41,8 @@ type Settings struct {
 	Selection_hybrid          SelectionHybrid
 	Rollout_selection         SelectionHybrid
 	Early_playout_termination EarlyTermination
+	Opponent_modelling        bool
+	OM_Threshold              float64
 }
 
 type Node struct {
@@ -113,6 +115,9 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	p.Rollouts = p.Root.visits - visits_before
 	p.NBeliefs = int(p.beliefs.belief_count)
 	p.Last_move = selected_move
+	if (selected_move == chess.Move{}) {
+		return random_element(board.PossibleMoves())
+	}
 	return selected_move
 }
 
@@ -177,12 +182,16 @@ func (p *POMCP) prune_tree_and_update_beliefs(board chess.ChessVariation) {
 						break
 					}
 				}
-				if !already_exists {
+				if !already_exists && beliefs.belief_count < BELIEFS_MAX {
 					beliefs.beliefs[beliefs.belief_count] = copy
 					beliefs.belief_count++
 				}
 			}
 
+		}
+		if beliefs.belief_count == 0 {
+			beliefs.beliefs[0] = board
+			beliefs.belief_count++
 		}
 		p.Root = new_root
 		p.free_nodes()
@@ -266,15 +275,22 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, discount fl
 
 func (p *POMCP) opponent_modelling(s chess_variation.ChessVariation, moves []chess.Move) {
 	if len(moves) > 0 {
-		//corrective := CorrectiveSelection{0.6, 0.05}
-		//opponent_move := corrective.Select(s)
-		opponent_move := random_element(s.PossibleMoves())
+		var opponent_move chess.Move
+		if p.Settings.Opponent_modelling {
+			corrective := CorrectiveSelection{p.Settings.OM_Threshold, 0.05}
+			opponent_move = corrective.Select(s)
+		} else {
+			opponent_move = random_element(s.PossibleMoves())
+		}
 		s.ExecuteMove(opponent_move)
 	}
 }
 
 func (p *POMCP) create_node(h *Node, a chess.Move, o uint64) *Node {
 	ha := p.get_node_address()
+	if ha == nil {
+		return nil
+	}
 	ha.move = a
 	ha.observation = o
 	ha.parent = h

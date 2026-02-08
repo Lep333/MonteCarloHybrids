@@ -17,26 +17,32 @@ func main() {
 		Termination_parameter:     1000,
 		Gamma:                     0.95,
 		Epsilon:                   0.1,
-		Ucb_c:                     1,
+		Ucb_c:                     10,
 		Rollout_capture:           0.0,
 		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
 		Early_playout_termination: nil,
-		POMCP_name:                "DPC_UCT",
+		POMCP_name:                "DPC_EARLY_PLAYOUT_TERMINATION",
+		Opponent_modelling:        true,
+		OM_Threshold:              1,
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
 		Gamma:                 0.95,
 		Epsilon:               0.1,
-		Ucb_c:                 1,
+		Ucb_c:                 10,
 		Rollout_capture:       0,
+		Opponent_modelling:    true,
+		OM_Threshold:          1,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	ucbs := []float64{10}
-	for _, ucb := range ucbs {
-		tune_settings.Ucb_c = ucb
+	threshs := []float64{0.2, 0.4, 0.6, 0.8}
+	for _, thresh := range threshs {
+		tune_settings.Early_playout_termination = &player.EvaluationCutOff{
+			Threshold: thresh,
+		}
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
@@ -49,9 +55,9 @@ func main() {
 			Last_move:       chess_variation.Move{},
 			Settings:        tune_settings,
 		}
-		iterations := 200
+		iterations := 100
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.LosAlamosChess{}
+			game := chess_variation.DarkPawnChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2

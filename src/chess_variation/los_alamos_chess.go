@@ -749,13 +749,19 @@ func (l *LosAlamosChess) GameOver() (bool, int) {
 }
 
 func (l *LosAlamosChess) Heuristic(white bool) float64 {
+	over, val := l.GameOver()
+	if over {
+		if white {
+			return float64(val)
+		} else {
+			return float64(-val)
+		}
+	}
 	value := 0.0
 	white_material := 0.0
 	black_material := 0.0
 	for i := 0; i < int(no_fields_lac); i++ {
-		if l.white_king&(0b1<<i) > 0 {
-			white_material += 200
-		} else if l.white_queen&(0b1<<i) > 0 {
+		if l.white_queen&(0b1<<i) > 0 {
 			white_material += 9
 		} else if l.white_rooks&(0b1<<i) > 0 {
 			white_material += 5
@@ -763,8 +769,6 @@ func (l *LosAlamosChess) Heuristic(white bool) float64 {
 			white_material += 3
 		} else if l.white_pawns&(0b1<<i) > 0 {
 			white_material += 1
-		} else if l.black_king&(0b1<<i) > 0 {
-			black_material += 200
 		} else if l.black_queen&(0b1<<i) > 0 {
 			black_material += 9
 		} else if l.black_rooks&(0b1<<i) > 0 {
