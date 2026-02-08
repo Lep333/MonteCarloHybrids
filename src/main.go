@@ -23,26 +23,20 @@ func main() {
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
 		Early_playout_termination: nil,
-		POMCP_name:                "DPC_EARLY_PLAYOUT_TERMINATION",
-		Opponent_modelling:        true,
-		OM_Threshold:              1,
+		POMCP_name:                "DC_UCT",
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
 		Gamma:                 0.95,
 		Epsilon:               0.1,
-		Ucb_c:                 10,
+		Ucb_c:                 1,
 		Rollout_capture:       0,
-		Opponent_modelling:    true,
-		OM_Threshold:          1,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{0.2, 0.4, 0.6, 0.8}
+	threshs := []float64{10}
 	for _, thresh := range threshs {
-		tune_settings.Early_playout_termination = &player.EvaluationCutOff{
-			Threshold: thresh,
-		}
+		tune_settings.Ucb_c = thresh
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
@@ -57,7 +51,7 @@ func main() {
 		}
 		iterations := 100
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.DarkPawnChess{}
+			game := chess_variation.DarkChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2
