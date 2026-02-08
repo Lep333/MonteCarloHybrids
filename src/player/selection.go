@@ -82,8 +82,9 @@ func (g *GreedySelection) Select(s chess_variation.ChessVariation) chess_variati
 		white = false
 	}
 	for _, move := range moves {
-		s.ExecuteMove(move)
-		score := s.Heuristic(white)
+		copy := s.ReturnBoard()
+		copy.ExecuteMove(move)
+		score := copy.Heuristic(white)
 		if score > max_score {
 			max_score = score
 			best_move = move
@@ -209,8 +210,9 @@ func (k *KBest) Select(s chess_variation.ChessVariation) chess_variation.Move {
 	}
 	poss_moves := s.PossibleMoves()
 	for _, move := range poss_moves {
-		s.ExecuteMove(move)
-		score := s.Heuristic(white)
+		copy := s.ReturnBoard()
+		copy.ExecuteMove(move)
+		score := copy.Heuristic(white)
 		moves = append(moves, MoveScore{move: move, score: score})
 	}
 	sort.Slice(moves, func(i int, j int) bool {

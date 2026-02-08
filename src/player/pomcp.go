@@ -276,8 +276,8 @@ func (p *POMCP) opponent_modelling(s chess_variation.ChessVariation, moves []che
 	if len(moves) > 0 {
 		var opponent_move chess.Move
 		if p.Settings.Opponent_modelling {
-			corrective := CorrectiveSelection{p.Settings.OM_Threshold, 0.05}
-			opponent_move = corrective.Select(s)
+			greedy := GreedySelection{p.Settings.OM_Threshold}
+			opponent_move = greedy.Select(s)
 		} else {
 			opponent_move = random_element(s.PossibleMoves())
 		}
