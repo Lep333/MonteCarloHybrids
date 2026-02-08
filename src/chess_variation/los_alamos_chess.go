@@ -793,7 +793,7 @@ func (l *LosAlamosChess) Heuristic(white bool) float64 {
 	l.whiteToPlay = !l.whiteToPlay
 	avg_material := (white_material + black_material) / 2
 	value = (white_material - black_material + float64(l.pawn_structure()) + 0.1*float64(white_mobility-black_mobility)) / avg_material
-	value = math.Min(math.Min(value, -1), 1)
+	value = math.Max(math.Min(value, 1), -1)
 	if !white {
 		value = -value
 	}
