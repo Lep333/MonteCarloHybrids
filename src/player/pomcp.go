@@ -317,9 +317,8 @@ func (p *POMCP) get_children(n *Node, a chess.Move, o uint64) *Node {
 	return child
 }
 
-func (p *POMCP) rollout(s chess.ChessVariation, depth int, discount float64) float64 {
-	discount *= discount
-	if discount < p.Settings.Epsilon {
+func (p *POMCP) rollout(s chess.ChessVariation, depth int, current_gamma float64) float64 {
+	if current_gamma < p.Settings.Epsilon || depth > 100 {
 		return 0
 	}
 	// early playout termination?
@@ -351,7 +350,7 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int, discount float64) flo
 		}
 		return float64(result) // 1 for win -1 for lose
 	}
-	return p.Settings.Gamma * p.rollout(new_s, depth+1, discount)
+	return p.Settings.Gamma * p.rollout(new_s, depth+1, current_gamma*p.Settings.Gamma)
 }
 
 func random_element[T any](collection []T) T {

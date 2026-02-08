@@ -129,14 +129,15 @@ func (e *EarlyPlayoutTerminationStruct) EarlyPlayoutTermination(
 		white = false
 	}
 
-	max_score := -1.0
+	max_score := math.Inf(-1)
 	if depth < e.Max_depth {
 		return false, 0.0
 	} else {
 		moves := s.PossibleMoves()
 		for _, move := range moves {
-			s.ExecuteMove(move)
-			score := s.Heuristic(white)
+			copy := s.ReturnBoard()
+			copy.ExecuteMove(move)
+			score := copy.Heuristic(white)
 			if score >= max_score {
 				max_score = score
 			}
