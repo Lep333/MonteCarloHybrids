@@ -113,12 +113,6 @@ def print_heatmap(result_dict: dict[list]):
 def print_hybrids(result_dict: dict[list]):
     diagrams = [
         (
-            "LAC_UCT",
-            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
-            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
-            "c"
-        ),
-        (
             "LAC_OM",
             [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
@@ -131,28 +125,28 @@ def print_hybrids(result_dict: dict[list]):
             "Epsilon"
         ),
         (
-            "LAC_CORRECTIVE",
-            [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
-            "Korrektur",
-            "Schwellwert Zug zu wählen"
-        ),
-        (
             "LAC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
             "Early-Playout-Termination",
             "Abbruchstiefe"
         ),
         (
+            "LAC_CAPTURE_PREF",
+            [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
+            "Schlagpräfarenz",
+            "Schlagwahrscheinlichkeit"
+        ),
+        (
+            "LAC_CORRECTIVE",
+            [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
+            "Korrektur",
+            "Schwellwert Zug zu wählen"
+        ),
+        (
             "LAC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "Frühzeitige Abbrüche",
             "Abbruchsschwellwert"
-        ),
-        (
-            "LAC_ROLLOUT_PREF",
-            [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
-            "Schlagpräfarenz",
-            "Schlagwahrscheinlichkeit"
         ),
         (
             "LAC_K_BEST",
