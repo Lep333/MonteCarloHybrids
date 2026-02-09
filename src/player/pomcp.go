@@ -58,7 +58,7 @@ type Node struct {
 }
 
 type Belief struct {
-	beliefs      [BELIEFS_MAX]chess.ChessVariation
+	beliefs      map[uint64]chess.ChessVariation
 	belief_count int64
 	allocated    bool
 }
@@ -141,7 +141,7 @@ func (p *POMCP) Init_pomcp(board chess.ChessVariation, whiteToPlay bool) {
 			for _, move := range init_board.PossibleMoves() {
 				game := init_board.ReturnBoard()
 				game.ExecuteMove(move)
-				p.beliefs.beliefs[p.beliefs.belief_count] = game
+				p.beliefs.beliefs[game.Hash()] = game
 				p.beliefs.belief_count++
 			}
 			p.Root = root
@@ -168,28 +168,21 @@ func (p *POMCP) prune_tree_and_update_beliefs(board chess.ChessVariation) {
 		beliefs := &Belief{}
 		// consistent_beliefs[] = append(consistent_beliefs, board)
 		for i := 0; i < 10000; i++ {
-			belief := random_belief(p.beliefs.beliefs[:p.beliefs.belief_count])
+			belief := random_belief(p.beliefs.beliefs)
 			copy := belief.ReturnBoard()
 			copy.ExecuteMove(p.Last_move)
 			opponent_move := random_element(copy.PossibleMoves())
 			copy.ExecuteMove(opponent_move)
-			already_exists := false
 			bel_hash := copy.ViewHash(white)
 			if bel_hash == board_hash {
-				for _, existing_belief := range beliefs.beliefs[:beliefs.belief_count] {
-					if existing_belief.Hash() == copy.Hash() {
-						already_exists = true
-						break
-					}
-				}
-				if !already_exists && beliefs.belief_count < BELIEFS_MAX {
-					beliefs.beliefs[beliefs.belief_count] = copy
-					beliefs.belief_count++
+				copy_hash := copy.Hash()
+				if _, ok := p.beliefs.beliefs[copy_hash]; !ok {
+					p.beliefs.beliefs[copy_hash] = copy
 				}
 			}
 
 		}
-		if beliefs.belief_count == 0 {
+		if len(beliefs.beliefs) == 0 {
 			beliefs.beliefs[0] = board
 			beliefs.belief_count++
 		}
@@ -221,7 +214,7 @@ func (p *POMCP) search(h *Node) chess.Move {
 	counter := 0
 	//for i := 0; i < 10000; i++ {
 	for !time_out(start_time, p.Settings.Termination_parameter) {
-		s := random_belief(p.beliefs.beliefs[:p.beliefs.belief_count])
+		s := random_belief(p.beliefs.beliefs)
 		copy := s.ReturnBoard()
 		p.simulate(copy, h, 0, p.Settings.Gamma)
 		counter++
@@ -365,7 +358,7 @@ func random_element[T any](collection []T) T {
 	return collection[selected_index]
 }
 
-func random_belief(b []chess.ChessVariation) chess.ChessVariation {
+func random_belief(b map[uint64]chess.ChessVariation) chess.ChessVariation {
 	i := 0
 	no_beliefs := len(b)
 	if no_beliefs > 1 {
