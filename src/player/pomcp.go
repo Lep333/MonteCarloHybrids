@@ -257,7 +257,7 @@ func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, current_gam
 			return p.rollout(s, depth, current_gamma)
 		}
 	}
-	reward := p.Settings.Gamma * p.simulate(s, ha, depth+1, current_gamma*p.Settings.Gamma)
+	reward := p.Settings.Gamma * p.simulate(s, ha, depth+2, current_gamma*p.Settings.Gamma)
 
 	h.visits++
 	ha.visits++
@@ -328,6 +328,11 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int, current_gamma float64
 		move := p.Settings.Rollout_selection.Select(s)
 		s.ExecuteMove(move)
 		new_s = s
+		game_over, _ := s.GameOver()
+		if !game_over {
+			opponent_selected_move := p.Settings.Rollout_selection.Select(s)
+			s.ExecuteMove(opponent_selected_move)
+		}
 	} else {
 		new_s = p.state_transition(s)
 	}
@@ -343,7 +348,7 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int, current_gamma float64
 		}
 		return float64(result) // 1 for win -1 for lose
 	}
-	return p.Settings.Gamma * p.rollout(new_s, depth+1, current_gamma*p.Settings.Gamma)
+	return p.Settings.Gamma * p.rollout(new_s, depth+2, current_gamma*p.Settings.Gamma)
 }
 
 func random_element[T any](collection []T) T {

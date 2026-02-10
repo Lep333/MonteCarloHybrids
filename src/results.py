@@ -138,7 +138,7 @@ def print_hybrids(result_dict: dict[list]):
         ),
         (
             "LAC_CORRECTIVE",
-            [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
+            [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur",
             "Schwellwert Zug zu wählen"
         ),
@@ -155,7 +155,7 @@ def print_hybrids(result_dict: dict[list]):
             "k"
         ),
         (
-            "LAC_INFORMED_ROLLOUTS",
+            "LAC_IC",
             [
                 r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
@@ -164,10 +164,10 @@ def print_hybrids(result_dict: dict[list]):
             ["Suchtiefe", "Abbruchstiefe"]
         ),
         (
-            "LAC_INFORMED_ROLLOUTS2",
+            "LAC_IR",
             [
                 r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
              ],
             "Vielversprechende Rollouts",
             ["Epsilon", "Suchtiefe"]
@@ -193,13 +193,18 @@ def print_hybrids(result_dict: dict[list]):
                 player_wins = value[0][0] + value[1][0]
                 player_games = sum(value[0]) + sum(value[1])
                 win_percentage = 100 * player_wins / player_games
+
                 res = binomtest(player_wins, player_games)
                 ci = res.proportion_ci(1 - 0.05, method="wilson")
+                ci_low_pct = 100 * ci.low
+                ci_high_pct = 100 * ci.high
+                lower_err = win_percentage - ci_low_pct
+                upper_err = ci_high_pct - win_percentage
                 print(name, ucb_c, win_percentage, value)
                 x.append(ucb_c)
                 y.append(win_percentage)
-                e_low.append(ci.low)
-                e_high.append(ci.high)
+                e_low.append(lower_err)
+                e_high.append(upper_err)
     
         x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))
         x = 0.5 + np.arange(len(y))
@@ -211,6 +216,9 @@ def print_hybrids(result_dict: dict[list]):
         ax.set_title(title)
         ax.set_ylabel("Siegesrate in %")
         ax.set_xlabel(x_axis_label)
+        ax.grid(True, which='major', axis='y', linestyle='--', alpha=0.6)
+        ax.set_ylim(0,100)
+        ax.set_yticks(np.arange(0, 101, 10))
         fig.tight_layout()
         plt.savefig(f"{name}.png", dpi=300)
         plt.close()
@@ -238,18 +246,32 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
                 e_high[param1] = []
             x[param1].append(param2)
             y[param1].append(win_percentage)
-            e_low[param1].append(ci.low)
-            e_high[param1].append(ci.high)
+            ci_low_pct = 100 * ci.low
+            ci_high_pct = 100 * ci.high
+            lower_err = win_percentage - ci_low_pct
+            upper_err = ci_high_pct - win_percentage
+            e_low[param1].append(lower_err)
+            e_high[param1].append(upper_err)
     fig, ax = plt.subplots()
-    for some, _ in x.items():
+    groups = sorted(x.keys())
+    n_groups = len(groups)
+    width = 0.15  # total horizontal spread
+    offsets = np.linspace(-width, width, n_groups)
+    for offset, param1 in zip(offsets, groups):
         #x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))
         #x = 0.5 + np.arange(len(y))
-        ax.errorbar(x[some], y[some], [e_low[some], e_high[some]], fmt='o', linewidth=2, capsize=6, label=f"{some}")
+        x_shifted = np.array(x[param1]) + offset
+        ax.errorbar(x_shifted, y[param1], [e_low[param1], e_high[param1]], fmt='o', linewidth=2, capsize=6, label=f"{param1}")
 
     ax.set_title(title)
     ax.set_ylabel("Siegesrate in %")
     ax.set_xlabel(x_axis_label[0])
     ax.legend(title=x_axis_label[1])
+    ax.grid(True, which='major', axis='y', linestyle='--', alpha=0.6)
+    ax.set_ylim(0,100)
+    ax.set_yticks(np.arange(0, 101, 10))
+    unique_x = sorted({v for vals in x.values() for v in vals})
+    ax.set_xticks(unique_x)
     fig.tight_layout()
     plt.savefig(f"{name}.png", dpi=300)
     plt.close()
