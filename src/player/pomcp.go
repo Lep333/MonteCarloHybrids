@@ -109,11 +109,9 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	}
 	p.Init_pomcp(board, whiteToPlay)
 	p.prune_tree_and_update_beliefs(board)
-	visits_before := p.Root.visits
 
 	selected_move := p.search(p.Root)
-	p.Rollouts = p.Root.visits - visits_before
-	p.NBeliefs = int(p.beliefs.belief_count)
+	p.NBeliefs = len(p.beliefs.beliefs)
 	p.Last_move = selected_move
 	if (selected_move == chess.Move{}) {
 		return random_element(board.PossibleMoves())
@@ -125,13 +123,14 @@ func (p *POMCP) Init_pomcp(board chess.ChessVariation, whiteToPlay bool) {
 	if p.Root == nil {
 		p.Nodes = [NODE_MAX]Node{}
 		p.beliefs = &Belief{}
+		p.beliefs.beliefs = make(map[uint64]chess.ChessVariation, 0)
 		p.node_count = 0
 		p.free_nodes()
 		if board.GetNumberOfMoves() == 0 {
 			init_board := board.ReturnBoard()
 			init_board.InitGame()
 			root := p.get_node_address()
-			p.beliefs.beliefs[0] = init_board
+			p.beliefs.beliefs[init_board.Hash()] = init_board
 			p.beliefs.belief_count++
 			p.Root = root
 		} else if board.GetNumberOfMoves() == 1 {
@@ -166,6 +165,7 @@ func (p *POMCP) prune_tree_and_update_beliefs(board chess.ChessVariation) {
 		}
 		// update consistent beliefs
 		beliefs := &Belief{}
+		beliefs.beliefs = make(map[uint64]chess.ChessVariation)
 		// consistent_beliefs[] = append(consistent_beliefs, board)
 		for i := 0; i < 10000; i++ {
 			belief := random_belief(p.beliefs.beliefs)
@@ -176,20 +176,24 @@ func (p *POMCP) prune_tree_and_update_beliefs(board chess.ChessVariation) {
 			bel_hash := copy.ViewHash(white)
 			if bel_hash == board_hash {
 				copy_hash := copy.Hash()
-				if _, ok := p.beliefs.beliefs[copy_hash]; !ok {
-					p.beliefs.beliefs[copy_hash] = copy
+				if _, ok := beliefs.beliefs[copy_hash]; !ok {
+					beliefs.beliefs[copy_hash] = copy
 				}
 			}
-
 		}
+		// create fallback particle
 		if len(beliefs.beliefs) == 0 {
-			beliefs.beliefs[0] = board
-			beliefs.belief_count++
+			for i, belief := range p.beliefs.beliefs {
+				consistent_particle := board.Create_fallback_particle(belief, p.Started_playing)
+				beliefs.beliefs[consistent_particle.Hash()] = consistent_particle
+				if i == 100 {
+					break
+				}
+			}
 		}
 		p.Root = new_root
 		p.free_nodes()
 		p.beliefs = beliefs
-		println("no beliefs", p.beliefs.belief_count)
 	}
 }
 
@@ -219,7 +223,8 @@ func (p *POMCP) search(h *Node) chess.Move {
 		p.simulate(copy, h, 0, p.Settings.Gamma)
 		counter++
 	}
-	print("rollouts: ", counter, "beliefs: ", p.beliefs.belief_count)
+	print("rollouts: ", counter, "beliefs: ", len(p.beliefs.beliefs))
+	p.Rollouts = counter
 	return get_best_move(h)
 }
 
@@ -407,7 +412,6 @@ func get_best_move(h *Node) chess.Move {
 			best_action_value = value[0]
 		}
 	}
-	print(best_action_value)
 	return best_action
 }
 

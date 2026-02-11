@@ -12,10 +12,9 @@ const (
 )
 
 type Move struct {
-	From          int8
-	To            int8
-	Capture       bool
-	CapturedPiece Piece
+	From    int8
+	To      int8
+	Capture bool
 }
 
 type ChessVariation interface {
@@ -27,8 +26,10 @@ type ChessVariation interface {
 	ExecuteMove(move Move)
 	UndoMove(move Move)
 	CreateView(white bool) ChessVariation
+	GetView(white bool) uint64
 	ViewHash(white bool) uint64
 	Hash() uint64
+	Create_fallback_particle(belief ChessVariation, white bool) ChessVariation
 	GameOver() (bool, int)
 	Heuristic(white bool) float64
 	String() string

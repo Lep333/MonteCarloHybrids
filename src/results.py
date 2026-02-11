@@ -113,6 +113,51 @@ def print_heatmap(result_dict: dict[list]):
 def print_hybrids(result_dict: dict[list]):
     diagrams = [
         (
+            "DPC_OM",
+            [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "DPC_GREEDY",
+            [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
+            "Greedy-Hybrid",
+            "Epsilon"
+        ),
+        (
+            "DPC_EPT",
+            [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
+            "Early-Playout-Termination",
+            "Abbruchstiefe"
+        ),
+        (
+            "DPC_CAPTURE_PREF",
+            [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
+            "Schlagpräfarenz",
+            "Schlagwahrscheinlichkeit"
+        ),
+        (
+            "DPC_EVALUATION_CUT_OFF",
+            [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
+            "Frühzeitige Abbrüche",
+            "Abbruchsschwellwert"
+        ),
+        (
+            "DPC_K_BEST",
+            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+            "K-Beste",
+            "k"
+        ),
+        (
+            "DPC_IC",
+            [
+                r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+            ],
+            "Vielversprechende Abbrüche",
+            ["Suchtiefe", "Abbruchstiefe"]
+        ),
+        (
             "LAC_OM",
             [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
@@ -191,10 +236,11 @@ def print_hybrids(result_dict: dict[list]):
                 if found := re.search(reg, key):
                     ucb_c = float(found.group(1))
                 player_wins = value[0][0] + value[1][0]
+                player_draws = (value[0][1] + value[1][1]) * 0.5
                 player_games = sum(value[0]) + sum(value[1])
-                win_percentage = 100 * player_wins / player_games
+                win_percentage = 100 * (player_wins + player_draws) / player_games
 
-                res = binomtest(player_wins, player_games)
+                res = binomtest(int(player_wins+player_draws), player_games)
                 ci = res.proportion_ci(1 - 0.05, method="wilson")
                 ci_low_pct = 100 * ci.low
                 ci_high_pct = 100 * ci.high

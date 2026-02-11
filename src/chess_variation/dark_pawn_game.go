@@ -125,7 +125,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 		if d.whiteToPlay && d.white_pawns&(0b1<<i) > 0 {
 			move_to_possible := white_pawns_moves[i] & ^d.black_pawns & ^d.white_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(i + row_length_dpc), false, Pawn}
+				move := Move{int8(i), int8(i + row_length_dpc), false}
 				moves[n] = move
 				n++
 			}
@@ -133,7 +133,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 			capture_possible := white_pawns_capture[i] & d.black_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position), true, Pawn}
+					move := Move{int8(i), int8(position), true}
 					moves[n] = move
 					n++
 				}
@@ -143,7 +143,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 		if !d.whiteToPlay && d.black_pawns&(0b1<<i) > 0 {
 			move_to_possible := black_pawns_moves[i] & ^d.white_pawns & ^d.black_pawns
 			if move_to_possible > 0 {
-				move := Move{int8(i), int8(i - row_length_dpc), false, Pawn}
+				move := Move{int8(i), int8(i - row_length_dpc), false}
 				moves[n] = move
 				n++
 			}
@@ -151,7 +151,7 @@ func (d *DarkPawnChess) get_moves(moves []Move) int {
 			capture_possible := black_pawns_capture[i] & d.white_pawns
 			for position := uint(0); position < no_fields_dpc; position++ {
 				if (capture_possible>>position)&0b1 != 0 {
-					move := Move{int8(i), int8(position), true, Pawn}
+					move := Move{int8(i), int8(position), true}
 					moves[n] = move
 					n++
 				}
@@ -234,6 +234,32 @@ func (d *DarkPawnChess) CreateView(white bool) ChessVariation {
 
 func (d *DarkPawnChess) create_view_mask() {
 	d.set_vision()
+}
+
+func (d *DarkPawnChess) GetView(white bool) uint64 {
+	d.set_vision()
+	if white {
+		return d.view_mask_white
+	} else {
+		return d.view_mask_black
+	}
+}
+
+func (l *DarkPawnChess) Create_fallback_particle(belief ChessVariation, white bool) ChessVariation {
+	if concrete_belief, ok := belief.(*DarkPawnChess); ok {
+		copy := *l
+		view := l.GetView(white)
+		if white {
+			no_information := concrete_belief.black_pawns & uint(^view)
+			copy.black_pawns |= uint(no_information & concrete_belief.black_pawns)
+			// iterate over belief and copy and check if they are equal (after last move is executed in belief)
+		} else {
+			no_information := concrete_belief.white_pawns & uint(^view)
+			copy.white_pawns |= uint(no_information & concrete_belief.white_pawns)
+		}
+		return &copy
+	}
+	panic("Didnt call Create fallback particle with a belief of type Dark Chess!")
 }
 
 func (d *DarkPawnChess) ViewHash(white bool) uint64 {

@@ -24,6 +24,8 @@ func main() {
 		Rollout_selection:         nil,
 		Early_playout_termination: nil,
 		POMCP_name:                "DC_UCT",
+		Opponent_modelling:        true,
+		OM_Threshold:              0.5,
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
@@ -31,6 +33,8 @@ func main() {
 		Epsilon:               0.1,
 		Ucb_c:                 1,
 		Rollout_capture:       0,
+		Opponent_modelling:    true,
+		OM_Threshold:          0.5,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0

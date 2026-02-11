@@ -242,16 +242,14 @@ func (l *LosAlamosChess) generate_moves(buffer []Move) int {
 }
 
 func (l *LosAlamosChess) move_bitboard_to_moves(start uint, move_bitboard uint, buffer []Move, n int, opp_occupancy uint) int {
-	var piece_type Piece
 	for i := uint(0); i < no_fields_lac; i++ {
 		move_to := uint(0b1 << i)
 		if move_bitboard&move_to > 0 {
 			capture := false
 			if opp_occupancy&move_to > 0 {
 				capture = true
-				piece_type = l.get_captured_piece(move_to)
 			}
-			move := Move{From: int8(start), To: int8(i), Capture: capture, CapturedPiece: piece_type}
+			move := Move{From: int8(start), To: int8(i), Capture: capture}
 			buffer[n] = move
 			n++
 		}
@@ -288,7 +286,6 @@ func (l *LosAlamosChess) get_captured_piece(move_to uint) Piece {
 }
 
 func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n int) int {
-	var piece_type Piece
 	own_occupancy := l.white_occupancy
 	opponent_occupancy := l.black_occupancy
 	if !white_to_play {
@@ -303,8 +300,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool, buffer []Mov
 			break
 		}
 		if opponent_occupancy&(move_to) > 0 {
-			piece_type = l.get_captured_piece(move_to)
-			move := Move{From: int8(i), To: int8(index), Capture: true, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: true}
 			buffer[n] = move
 			n++
 			break
@@ -322,8 +318,7 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool, buffer []Mov
 			break
 		}
 		if opponent_occupancy&(0b1<<index) > 0 {
-			piece_type = l.get_captured_piece(move_to)
-			move := Move{From: int8(i), To: int8(index), Capture: true, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: true}
 			buffer[n] = move
 			n++
 			break
@@ -343,10 +338,9 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool, buffer []Mov
 		}
 		if opponent_occupancy&(move_to) > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
 		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
-			move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			buffer[n] = move
 			n++
 			break
@@ -366,10 +360,9 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool, buffer []Mov
 		}
 		if opponent_occupancy&(move_to) > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
 		if index%int(row_length_lac) == 0 || capture {
-			move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			buffer[n] = move
 			n++
 			break
@@ -383,7 +376,6 @@ func (l *LosAlamosChess) get_rook_moves(i uint, white_to_play bool, buffer []Mov
 }
 
 func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool, buffer []Move, n int) int {
-	var piece_type Piece
 	own_occupancy := l.white_occupancy
 	opponent_occupancy := l.black_occupancy
 	if !white_to_play {
@@ -400,9 +392,8 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool, buffer []M
 		}
 		if opponent_occupancy&move_to > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
 		buffer[n] = move
 		n++
 		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
@@ -420,9 +411,8 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool, buffer []M
 		}
 		if opponent_occupancy&move_to > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
 		buffer[n] = move
 		n++
 		if index%int(row_length_lac) == int(row_length_lac)-1 || capture {
@@ -440,9 +430,8 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool, buffer []M
 		}
 		if opponent_occupancy&move_to > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
 		buffer[n] = move
 		n++
 		if index%int(row_length_lac) == 0 || capture {
@@ -460,9 +449,8 @@ func (l *LosAlamosChess) get_bishop_moves(i uint, white_to_play bool, buffer []M
 		}
 		if opponent_occupancy&move_to > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+		move := Move{From: int8(i), To: int8(index), Capture: capture}
 		buffer[n] = move
 		n++
 		if index%int(row_length_lac) == 0 || capture {
@@ -597,35 +585,6 @@ func (l *LosAlamosChess) UndoMove(move Move) {
 	} else if l.black_king&move_to_mask > 0 {
 		l.black_king = (l.black_king &^ move_to_mask) | move_from_mask
 	}
-
-	// undo capture
-	if l.whiteToPlay {
-		switch move.CapturedPiece {
-		case Pawn:
-			l.black_pawns |= move_to_mask
-		case Rook:
-			l.black_rooks |= move_to_mask
-		case Knight:
-			l.black_knights |= move_to_mask
-		case Queen:
-			l.black_queen |= move_to_mask
-		case King:
-			l.black_king |= move_to_mask
-		}
-	} else {
-		switch move.CapturedPiece {
-		case Pawn:
-			l.white_pawns |= move_to_mask
-		case Rook:
-			l.white_rooks |= move_to_mask
-		case Knight:
-			l.white_knights |= move_to_mask
-		case Queen:
-			l.white_queen |= move_to_mask
-		case King:
-			l.white_king |= move_to_mask
-		}
-	}
 	l.set_occupancy_boards()
 }
 
@@ -637,6 +596,36 @@ func (l *LosAlamosChess) set_occupancy_boards() {
 }
 
 var moves = [200]Move{}
+
+func (l *LosAlamosChess) GetView(white bool) uint64 {
+	return uint64(l.compute_vision(white))
+}
+
+func (l *LosAlamosChess) Create_fallback_particle(belief ChessVariation, white bool) ChessVariation {
+	if concrete_belief, ok := belief.(*LosAlamosChess); ok {
+		copy := *l
+		view := l.GetView(white)
+		if white {
+			no_information := concrete_belief.black_occupancy & uint(^view)
+			copy.black_king |= no_information & concrete_belief.black_king
+			copy.black_knights |= no_information & concrete_belief.black_knights
+			copy.black_pawns |= no_information & concrete_belief.black_pawns
+			copy.black_queen |= no_information & concrete_belief.black_queen
+			copy.black_rooks |= no_information & concrete_belief.black_rooks
+			// iterate over belief and copy and check if they are equal (after last move is executed in belief)
+		} else {
+			no_information := concrete_belief.black_occupancy & uint(^view)
+			copy.white_king |= no_information & concrete_belief.white_king
+			copy.white_knights |= no_information & concrete_belief.white_knights
+			copy.white_pawns |= no_information & concrete_belief.white_pawns
+			copy.white_queen |= no_information & concrete_belief.white_queen
+			copy.white_rooks |= no_information & concrete_belief.white_rooks
+		}
+		copy.set_occupancy_boards()
+		return &copy
+	}
+	panic("Didnt call Create fallback particle with a belief of type Dark Chess!")
+}
 
 func (l *LosAlamosChess) CreateView(white bool) ChessVariation {
 	copy := *l
@@ -740,7 +729,7 @@ func (l *LosAlamosChess) GameOver() (bool, int) {
 		return true, 1
 	}
 
-	max_moves := 100
+	max_moves := 200
 	if l.number_of_moves > max_moves {
 		return true, 0
 	}

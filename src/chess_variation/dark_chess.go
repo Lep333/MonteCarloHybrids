@@ -6,36 +6,36 @@ import (
 	"strconv"
 )
 
-const row_length_dc uint = 8
-const no_fields_dc uint = row_length_dc * row_length_dc
-const black_base_line_start_dc uint = row_length_dc * (row_length_dc - 1)
+const row_length_dc uint64 = 8
+const no_fields_dc uint64 = row_length_dc * row_length_dc
+const black_base_line_start_dc uint64 = row_length_dc * (row_length_dc - 1)
 const no_of_piece_types_dc = 6
 const len_zobrist_numbers_dc = no_fields_dc * no_of_piece_types_dc * 2
 
-var dc_white_pawns_moves [no_fields_dc]uint
-var dc_white_pawns_capture [no_fields_dc]uint
-var dc_black_pawns_moves [no_fields_dc]uint
-var dc_black_pawns_capture [no_fields_dc]uint
-var dc_white_rooks_moves [no_fields_dc]uint
-var dc_knights_moves [no_fields_dc]uint
-var dc_king_moves [no_fields_dc]uint
+var dc_white_pawns_moves [no_fields_dc]uint64
+var dc_white_pawns_capture [no_fields_dc]uint64
+var dc_black_pawns_moves [no_fields_dc]uint64
+var dc_black_pawns_capture [no_fields_dc]uint64
+var dc_white_rooks_moves [no_fields_dc]uint64
+var dc_knights_moves [no_fields_dc]uint64
+var dc_king_moves [no_fields_dc]uint64
 var dc_zobrist_numbers [len_zobrist_numbers_dc]uint64
 
 type DarkChess struct {
-	white_pawns     uint
-	black_pawns     uint
-	white_rooks     uint
-	black_rooks     uint
-	white_knights   uint
-	black_knights   uint
-	white_king      uint
-	black_king      uint
-	white_queen     uint
-	black_queen     uint
-	white_bishop    uint
-	black_bishop    uint
-	white_occupancy uint
-	black_occupancy uint
+	white_pawns     uint64
+	black_pawns     uint64
+	white_rooks     uint64
+	black_rooks     uint64
+	white_knights   uint64
+	black_knights   uint64
+	white_king      uint64
+	black_king      uint64
+	white_queen     uint64
+	black_queen     uint64
+	white_bishop    uint64
+	black_bishop    uint64
+	white_occupancy uint64
+	black_occupancy uint64
 	whiteToPlay     bool
 	number_of_moves int
 	move_count      int
@@ -45,7 +45,7 @@ func init() {
 	for i := 0; i < int(len_zobrist_numbers_dc); i++ {
 		dc_zobrist_numbers[i] = rand.Uint64()
 	}
-	for i := uint(0); i < no_fields_dc; i++ {
+	for i := uint64(0); i < no_fields_dc; i++ {
 		dc_init_pawns(i)
 		dc_init_knights(i)
 		dc_init_kings(i)
@@ -61,16 +61,16 @@ func (dc *DarkChess) InitGame() {
 	dc.black_rooks = dc.white_rooks << (row_length_dc * 7)
 	dc.white_knights = 0b01000010
 	dc.black_knights = dc.white_knights << (row_length_dc * 7)
-	dc.white_king = 0b1000
+	dc.white_king = 0b10000
 	dc.black_king = dc.white_king << (row_length_dc * 7)
-	dc.white_queen = 0b010000
+	dc.white_queen = 0b01000
 	dc.black_queen = dc.white_queen << (row_length_dc * 7)
 	dc.white_bishop = 0b00100100
 	dc.black_bishop = dc.white_bishop << (row_length_dc * 7)
 	dc.set_occupancy_boards()
 }
 
-func dc_init_pawns(i uint) {
+func dc_init_pawns(i uint64) {
 	if i < no_fields_dc-row_length_dc {
 		dc_white_pawns_moves[i] = 0b1 << (i + row_length_dc)
 		if i%row_length_dc != row_length_dc-1 {
@@ -93,7 +93,7 @@ func dc_init_pawns(i uint) {
 	}
 }
 
-func dc_init_knights(i uint) {
+func dc_init_knights(i uint64) {
 	col := i % row_length_dc
 	row := i / row_length_dc
 	// TODO:
@@ -131,7 +131,7 @@ func dc_init_knights(i uint) {
 	}
 }
 
-func dc_init_kings(i uint) {
+func dc_init_kings(i uint64) {
 	col := i % row_length_dc
 	row := i / row_length_dc
 
@@ -216,13 +216,25 @@ func (dc *DarkChess) generate_moves(buffer []Move) int {
 		white_to_play = false
 	}
 
-	for i := uint(0); i < no_fields_dc; i++ {
+	for i := uint64(0); i < no_fields_dc; i++ {
 		// pawns
 		if own_pawns&(0b1<<i) > 0 {
 			moves_possible := (own_pawns_moves[i] & ^opponent_occupancy &
 				^own_occupancy) |
 				(own_pawns_capture[i] & opponent_occupancy)
 			n = dc.move_bitboard_to_moves(i, moves_possible, buffer, n, opponent_occupancy)
+			// pawns to in front
+			if dc.whiteToPlay {
+				if i < 16 && (1<<(i+8)&dc.white_occupancy&dc.black_occupancy) == 0 &&
+					(1<<(i+16)&dc.white_occupancy&dc.black_occupancy) == 0 {
+					n = dc.move_bitboard_to_moves(i, 1<<(i+16), buffer, n, opponent_occupancy)
+				}
+			} else {
+				if i > 47 && (1<<(i-8)&dc.white_occupancy&dc.black_occupancy) == 0 &&
+					(1<<(i-16)&dc.white_occupancy&dc.black_occupancy) == 0 {
+					n = dc.move_bitboard_to_moves(i, 1>>(i-16), buffer, n, opponent_occupancy)
+				}
+			}
 		}
 		// rooks
 		if own_rooks&(0b1<<i) > 0 {
@@ -251,17 +263,15 @@ func (dc *DarkChess) generate_moves(buffer []Move) int {
 	return n
 }
 
-func (l *DarkChess) move_bitboard_to_moves(start uint, move_bitboard uint, buffer []Move, n int, opp_occupancy uint) int {
-	var piece_type Piece
-	for i := uint(0); i < no_fields_dc; i++ {
-		move_to := uint(0b1 << i)
+func (l *DarkChess) move_bitboard_to_moves(start uint64, move_bitboard uint64, buffer []Move, n int, opp_occupancy uint64) int {
+	for i := uint64(0); i < no_fields_dc; i++ {
+		move_to := uint64(0b1 << i)
 		if move_bitboard&move_to > 0 {
 			capture := false
 			if opp_occupancy&move_to > 0 {
 				capture = true
-				piece_type = l.get_captured_piece(move_to)
 			}
-			move := Move{From: int8(start), To: int8(i), Capture: capture, CapturedPiece: piece_type}
+			move := Move{From: int8(start), To: int8(i), Capture: capture}
 			buffer[n] = move
 			n++
 		}
@@ -269,7 +279,7 @@ func (l *DarkChess) move_bitboard_to_moves(start uint, move_bitboard uint, buffe
 	return n
 }
 
-func (l *DarkChess) get_captured_piece(move_to uint) Piece {
+func (l *DarkChess) get_captured_piece(move_to uint64) Piece {
 	var piece_type Piece
 	opp_king := l.black_king
 	opp_queen := l.black_queen
@@ -301,8 +311,7 @@ func (l *DarkChess) get_captured_piece(move_to uint) Piece {
 	return piece_type
 }
 
-func (l *DarkChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n int) int {
-	var piece_type Piece
+func (l *DarkChess) get_rook_moves(i uint64, white_to_play bool, buffer []Move, n int) int {
 	own_occupancy := l.white_occupancy
 	opponent_occupancy := l.black_occupancy
 	if !white_to_play {
@@ -312,13 +321,12 @@ func (l *DarkChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n 
 	// up
 	index := int(i + row_length_dc)
 	for index < int(no_fields_dc) && !(i/row_length_dc == row_length_dc-1) {
-		move_to := uint(0b1 << index)
+		move_to := uint64(0b1 << index)
 		if own_occupancy&(move_to) > 0 {
 			break
 		}
 		if opponent_occupancy&(move_to) > 0 {
-			piece_type = l.get_captured_piece(move_to)
-			move := Move{From: int8(i), To: int8(index), Capture: true, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: true}
 			buffer[n] = move
 			n++
 			break
@@ -331,13 +339,12 @@ func (l *DarkChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n 
 	// down
 	index = int(i) - int(row_length_dc)
 	for index >= 0 && !(i/row_length_dc == 0) {
-		move_to := uint(0b1 << index)
+		move_to := uint64(0b1 << index)
 		if own_occupancy&(move_to) > 0 {
 			break
 		}
 		if opponent_occupancy&(0b1<<index) > 0 {
-			piece_type = l.get_captured_piece(move_to)
-			move := Move{From: int8(i), To: int8(index), Capture: true, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: true}
 			buffer[n] = move
 			n++
 			break
@@ -349,18 +356,17 @@ func (l *DarkChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n 
 	}
 	// right
 	index = int(i) + 1
-	for index < int(no_fields_dc) && !(i%row_length_dc == 5) {
+	for index < int(no_fields_dc) && !(i%row_length_dc == row_length_dc-1) {
 		capture := false
-		move_to := uint(0b1 << index)
+		move_to := uint64(0b1 << index)
 		if own_occupancy&(move_to) > 0 {
 			break
 		}
 		if opponent_occupancy&(move_to) > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
 		if index%int(row_length_dc) == int(row_length_dc)-1 || capture {
-			move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			buffer[n] = move
 			n++
 			break
@@ -374,16 +380,15 @@ func (l *DarkChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n 
 	index = int(i) - 1
 	for index >= 0 && !(i%row_length_dc == 0) {
 		capture := false
-		move_to := uint(0b1 << index)
+		move_to := uint64(0b1 << index)
 		if own_occupancy&(move_to) > 0 {
 			break
 		}
 		if opponent_occupancy&(move_to) > 0 {
 			capture = true
-			piece_type = l.get_captured_piece(move_to)
 		}
 		if index%int(row_length_dc) == 0 || capture {
-			move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
+			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			buffer[n] = move
 			n++
 			break
@@ -396,8 +401,7 @@ func (l *DarkChess) get_rook_moves(i uint, white_to_play bool, buffer []Move, n 
 	return n
 }
 
-func (l *DarkChess) get_bishop_moves(i uint, white_to_play bool, buffer []Move, n int) int {
-	var piece_type Piece
+func (l *DarkChess) get_bishop_moves(i uint64, white_to_play bool, buffer []Move, n int) int {
 	own_occupancy := l.white_occupancy
 	opponent_occupancy := l.black_occupancy
 	if !white_to_play {
@@ -405,92 +409,49 @@ func (l *DarkChess) get_bishop_moves(i uint, white_to_play bool, buffer []Move, 
 		opponent_occupancy = l.white_occupancy
 	}
 	// up right
-	index := int(i + row_length_dc + 1)
-	for index < int(no_fields_dc) && !(i%row_length_dc == 5) {
+	offsets := []int{9, 7, -7, -9}
+	last_row_start := int(no_fields_dc - row_length_dc)
+	for _, offset := range offsets {
+		index := int(i) + offset
 		capture := false
-		move_to := uint(0b1 << index)
-		if own_occupancy&(move_to) > 0 {
-			break
+		for {
+			col := index % int(row_length_dc)
+			if offset == -9 && (index < 0 || col == 0) {
+				break
+			}
+			if offset == -7 && (index < 0 || col == int(row_length_dc)-1) {
+				break
+			}
+			if offset == 7 && (index < last_row_start || col == 0) {
+				break
+			}
+			if offset == 9 && (index < last_row_start || col == int(row_length_dc)-1) {
+				break
+			}
+			move_to := 1 << index
+			if own_occupancy&uint64(move_to) > 0 {
+				break
+			}
+			if opponent_occupancy&uint64(move_to) > 0 {
+				capture = true
+			}
+			move := Move{From: int8(i), To: int8(index), Capture: capture}
+			buffer[n] = move
+			n++
+
+			if capture {
+				break
+			}
+			index += offset
 		}
-		if opponent_occupancy&move_to > 0 {
-			capture = true
-			piece_type = l.get_captured_piece(move_to)
-		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
-		buffer[n] = move
-		n++
-		if index%int(row_length_dc) == int(row_length_dc)-1 || capture {
-			break
-		}
-		index += int(row_length_dc) + 1
-	}
-	// down right
-	index = int(i) - int(row_length_dc) - 1
-	for index >= 0 && !(i%row_length_dc == 5) {
-		capture := false
-		move_to := uint(0b1 << index)
-		if own_occupancy&move_to > 0 {
-			break
-		}
-		if opponent_occupancy&move_to > 0 {
-			capture = true
-			piece_type = l.get_captured_piece(move_to)
-		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
-		buffer[n] = move
-		n++
-		if index%int(row_length_dc) == int(row_length_dc)-1 || capture {
-			break
-		}
-		index -= int(row_length_dc) + 1
-	}
-	// down left
-	index = int(i) - (int(row_length_dc) + 1)
-	for index >= 0 && !(i%row_length_dc == 0) {
-		capture := false
-		move_to := uint(0b1 << index)
-		if own_occupancy&move_to > 0 {
-			break
-		}
-		if opponent_occupancy&move_to > 0 {
-			capture = true
-			piece_type = l.get_captured_piece(move_to)
-		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
-		buffer[n] = move
-		n++
-		if index%int(row_length_dc) == 0 || capture {
-			break
-		}
-		index -= (int(row_length_dc) + 1)
-	}
-	// up left
-	index = int(i) + int(row_length_dc) - 1
-	for index < int(no_fields_dc) && !(i%row_length_dc == 0) {
-		capture := false
-		move_to := uint(0b1 << index)
-		if own_occupancy&move_to > 0 {
-			break
-		}
-		if opponent_occupancy&move_to > 0 {
-			capture = true
-			piece_type = l.get_captured_piece(move_to)
-		}
-		move := Move{From: int8(i), To: int8(index), Capture: capture, CapturedPiece: piece_type}
-		buffer[n] = move
-		n++
-		if index%int(row_length_dc) == 0 || capture {
-			break
-		}
-		index += int(row_length_dc) - 1
 	}
 	return n
 }
 
-func (l *DarkChess) compute_vision(white bool) uint {
+func (l *DarkChess) compute_vision(white bool) uint64 {
 	flip_players_turn := false
 	local_moves := [200]Move{}
-	vision := uint(0)
+	vision := uint64(0)
 	if white != l.whiteToPlay {
 		l.whiteToPlay = !l.whiteToPlay
 		flip_players_turn = true
@@ -502,11 +463,11 @@ func (l *DarkChess) compute_vision(white bool) uint {
 	if white {
 		field_in_front_of_pawns := l.white_pawns << row_length_dc
 		vision |= l.white_pawns | l.white_rooks | l.white_knights |
-			l.white_queen | l.white_king | field_in_front_of_pawns
+			l.white_queen | l.white_king | field_in_front_of_pawns | l.white_bishop
 	} else {
 		field_in_front_of_pawns := l.black_pawns >> row_length_dc
 		vision |= l.black_pawns | l.black_rooks | l.black_knights |
-			l.black_queen | l.black_king | field_in_front_of_pawns
+			l.black_queen | l.black_king | field_in_front_of_pawns | l.black_bishop
 	}
 	if flip_players_turn {
 		l.whiteToPlay = !l.whiteToPlay
@@ -517,8 +478,8 @@ func (l *DarkChess) compute_vision(white bool) uint {
 func (l *DarkChess) ExecuteMove(move Move) {
 	last_row_start := 56
 	first_row_end := 7
-	move_to_mask := uint(0b1 << move.To)
-	move_from_mask := uint(0b1 << move.From)
+	move_to_mask := uint64(0b1 << move.To)
+	move_from_mask := uint64(0b1 << move.From)
 	if l.white_rooks&move_to_mask > 0 {
 		l.white_rooks = l.white_rooks &^ move_to_mask
 	} else if l.white_knights&move_to_mask > 0 {
@@ -529,6 +490,8 @@ func (l *DarkChess) ExecuteMove(move Move) {
 		l.white_king = l.white_king &^ move_to_mask
 	} else if l.white_pawns&move_to_mask > 0 {
 		l.white_pawns = l.white_pawns &^ move_to_mask
+	} else if l.white_bishop&move_to_mask > 0 {
+		l.white_bishop = l.white_bishop &^ move_to_mask
 	} else if l.black_rooks&move_to_mask > 0 {
 		l.black_rooks = l.black_rooks &^ move_to_mask
 	} else if l.black_knights&move_to_mask > 0 {
@@ -539,6 +502,8 @@ func (l *DarkChess) ExecuteMove(move Move) {
 		l.black_king = l.black_king &^ move_to_mask
 	} else if l.black_pawns&move_to_mask > 0 {
 		l.black_pawns = l.black_pawns &^ move_to_mask
+	} else if l.black_bishop&move_to_mask > 0 {
+		l.black_bishop = l.black_bishop &^ move_to_mask
 	}
 
 	if l.white_rooks&move_from_mask > 0 {
@@ -556,6 +521,8 @@ func (l *DarkChess) ExecuteMove(move Move) {
 		} else {
 			l.white_pawns = (l.white_pawns &^ move_from_mask) | move_to_mask
 		}
+	} else if l.white_bishop&move_from_mask > 0 {
+		l.white_bishop = (l.white_bishop &^ move_from_mask) | move_to_mask
 	} else if l.black_rooks&move_from_mask > 0 {
 		l.black_rooks = (l.black_rooks &^ move_from_mask) | move_to_mask
 	} else if l.black_knights&move_from_mask > 0 {
@@ -571,6 +538,8 @@ func (l *DarkChess) ExecuteMove(move Move) {
 		} else {
 			l.black_pawns = (l.black_pawns &^ move_from_mask) | move_to_mask
 		}
+	} else if l.black_bishop&move_from_mask > 0 {
+		l.black_bishop = (l.black_bishop &^ move_from_mask) | move_to_mask
 	}
 	l.number_of_moves++
 	l.whiteToPlay = !l.whiteToPlay
@@ -582,8 +551,8 @@ func (l *DarkChess) UndoMove(move Move) {
 	l.number_of_moves--
 	l.whiteToPlay = !l.whiteToPlay
 
-	move_to_mask := uint(0b1 << move.To)
-	move_from_mask := uint(0b1 << move.From)
+	move_to_mask := uint64(0b1 << move.To)
+	move_from_mask := uint64(0b1 << move.From)
 
 	// undo move
 	if l.white_pawns&move_to_mask > 0 {
@@ -614,34 +583,6 @@ func (l *DarkChess) UndoMove(move Move) {
 		l.black_king = (l.black_king &^ move_to_mask) | move_from_mask
 	}
 
-	// undo capture
-	if l.whiteToPlay {
-		switch move.CapturedPiece {
-		case Pawn:
-			l.black_pawns |= move_to_mask
-		case Rook:
-			l.black_rooks |= move_to_mask
-		case Knight:
-			l.black_knights |= move_to_mask
-		case Queen:
-			l.black_queen |= move_to_mask
-		case King:
-			l.black_king |= move_to_mask
-		}
-	} else {
-		switch move.CapturedPiece {
-		case Pawn:
-			l.white_pawns |= move_to_mask
-		case Rook:
-			l.white_rooks |= move_to_mask
-		case Knight:
-			l.white_knights |= move_to_mask
-		case Queen:
-			l.white_queen |= move_to_mask
-		case King:
-			l.white_king |= move_to_mask
-		}
-	}
 	l.set_occupancy_boards()
 }
 
@@ -655,7 +596,7 @@ func (dc *DarkChess) set_occupancy_boards() {
 func (l *DarkChess) CreateView(white bool) ChessVariation {
 	copy := *l
 	moves := l.PossibleMoves()
-	vision := uint(0)
+	vision := uint64(0)
 	for _, move := range moves {
 		vision |= (1 << move.To)
 	}
@@ -683,6 +624,38 @@ func (l *DarkChess) CreateView(white bool) ChessVariation {
 	copy.set_occupancy_boards()
 
 	return &copy
+}
+
+func (l *DarkChess) GetView(white bool) uint64 {
+	return uint64(l.compute_vision(white))
+}
+
+func (l *DarkChess) Create_fallback_particle(belief ChessVariation, white bool) ChessVariation {
+	if concrete_belief, ok := belief.(*DarkChess); ok {
+		copy := *l
+		view := l.GetView(white)
+		if white {
+			no_information := concrete_belief.black_occupancy & ^view
+			copy.black_bishop |= no_information & concrete_belief.black_bishop
+			copy.black_king |= no_information & concrete_belief.black_king
+			copy.black_knights |= no_information & concrete_belief.black_knights
+			copy.black_pawns |= no_information & concrete_belief.black_pawns
+			copy.black_queen |= no_information & concrete_belief.black_queen
+			copy.black_rooks |= no_information & concrete_belief.black_rooks
+			// iterate over belief and copy and check if they are equal (after last move is executed in belief)
+		} else {
+			no_information := concrete_belief.black_occupancy & ^view
+			copy.white_bishop |= no_information & concrete_belief.white_bishop
+			copy.white_king |= no_information & concrete_belief.white_king
+			copy.white_knights |= no_information & concrete_belief.white_knights
+			copy.white_pawns |= no_information & concrete_belief.white_pawns
+			copy.white_queen |= no_information & concrete_belief.white_queen
+			copy.white_rooks |= no_information & concrete_belief.white_rooks
+		}
+		copy.set_occupancy_boards()
+		return &copy
+	}
+	panic("Didnt call Create fallback particle with a belief of type Dark Chess!")
 }
 
 func (l *DarkChess) ViewHash(white bool) uint64 {
@@ -764,7 +737,7 @@ func (l *DarkChess) GameOver() (bool, int) {
 		return true, 1
 	}
 
-	max_moves := 100
+	max_moves := 200
 	if l.number_of_moves > max_moves {
 		return true, 0
 	}
@@ -886,7 +859,7 @@ func (l *DarkChess) String() string {
 	field_string := ""
 	row_string := ""
 	for i := int(row_length_dc*row_length_dc) - 1; i >= 0; i-- {
-		field_mask := uint(0b1 << i)
+		field_mask := uint64(0b1 << i)
 		if l.white_rooks&field_mask > 0 {
 			row_string = "R " + row_string
 		} else if l.white_knights&field_mask > 0 {
@@ -930,7 +903,7 @@ func (l *DarkChess) FENString() string {
 	row_string := ""
 	empty_fields := 0
 	for i := int(row_length_dc*row_length_dc) - 1; i >= 0; i-- {
-		field_mask := uint(0b1 << i)
+		field_mask := uint64(0b1 << i)
 		if (l.white_occupancy|l.black_occupancy)&field_mask > 0 && empty_fields > 0 {
 			row_string = strconv.Itoa(empty_fields) + row_string
 			empty_fields = 0
