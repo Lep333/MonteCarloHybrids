@@ -55,18 +55,18 @@ func init() {
 func (dc *DarkChess) InitGame() {
 	dc.whiteToPlay = true
 	dc.number_of_moves = 0
-	dc.white_pawns = 0b11111111 << row_length_dc
-	dc.black_pawns = 0b11111111 << (row_length_dc * 6)
-	dc.white_rooks = 0b10000001
-	dc.black_rooks = dc.white_rooks << (row_length_dc * 7)
-	dc.white_knights = 0b01000010
-	dc.black_knights = dc.white_knights << (row_length_dc * 7)
-	dc.white_king = 0b10000
-	dc.black_king = dc.white_king << (row_length_dc * 7)
-	dc.white_queen = 0b01000
-	dc.black_queen = dc.white_queen << (row_length_dc * 7)
-	dc.white_bishop = 0b00100100
-	dc.black_bishop = dc.white_bishop << (row_length_dc * 7)
+	dc.white_pawns = uint64(0b11111111) << row_length_dc
+	dc.black_pawns = uint64(0b11111111) << (row_length_dc * 6)
+	dc.white_rooks = uint64(0b10000001)
+	dc.black_rooks = uint64(dc.white_rooks) << (row_length_dc * 7)
+	dc.white_knights = uint64(0b01000010)
+	dc.black_knights = uint64(dc.white_knights) << (row_length_dc * 7)
+	dc.white_king = uint64(0b10000)
+	dc.black_king = uint64(dc.white_king) << (row_length_dc * 7)
+	dc.white_queen = uint64(0b01000)
+	dc.black_queen = uint64(dc.white_queen) << (row_length_dc * 7)
+	dc.white_bishop = uint64(0b00100100)
+	dc.black_bishop = uint64(dc.white_bishop) << (row_length_dc * 7)
 	dc.set_occupancy_boards()
 }
 
@@ -225,14 +225,14 @@ func (dc *DarkChess) generate_moves(buffer []Move) int {
 			n = dc.move_bitboard_to_moves(i, moves_possible, buffer, n, opponent_occupancy)
 			// pawns to in front
 			if dc.whiteToPlay {
-				if i < 16 && (1<<(i+8)&dc.white_occupancy&dc.black_occupancy) == 0 &&
-					(1<<(i+16)&dc.white_occupancy&dc.black_occupancy) == 0 {
+				if i < 16 && (1<<(i+8)&(dc.white_occupancy|dc.black_occupancy)) == 0 &&
+					(uint64(1)<<(i+16)&(dc.white_occupancy|dc.black_occupancy)) == 0 {
 					n = dc.move_bitboard_to_moves(i, 1<<(i+16), buffer, n, opponent_occupancy)
 				}
 			} else {
-				if i > 47 && (1<<(i-8)&dc.white_occupancy&dc.black_occupancy) == 0 &&
-					(1<<(i-16)&dc.white_occupancy&dc.black_occupancy) == 0 {
-					n = dc.move_bitboard_to_moves(i, 1>>(i-16), buffer, n, opponent_occupancy)
+				if i > 47 && (1<<(i-8)&(dc.white_occupancy|dc.black_occupancy)) == 0 &&
+					(uint64(1)<<(i-16)&(dc.white_occupancy|dc.black_occupancy)) == 0 {
+					n = dc.move_bitboard_to_moves(i, 1<<(i-16), buffer, n, opponent_occupancy)
 				}
 			}
 		}
@@ -404,15 +404,14 @@ func (l *DarkChess) get_rook_moves(i uint64, white_to_play bool, buffer []Move, 
 func (l *DarkChess) get_bishop_moves(i uint64, white_to_play bool, buffer []Move, n int) int {
 	own_occupancy := l.white_occupancy
 	opponent_occupancy := l.black_occupancy
-	if !white_to_play {
+	if !l.whiteToPlay {
 		own_occupancy = l.black_occupancy
 		opponent_occupancy = l.white_occupancy
 	}
-	// up right
 	offsets := []int{9, 7, -7, -9}
 	last_row_start := int(no_fields_dc - row_length_dc)
 	for _, offset := range offsets {
-		index := int(i) + offset
+		index := int(i)
 		capture := false
 		for {
 			col := index % int(row_length_dc)
@@ -422,19 +421,21 @@ func (l *DarkChess) get_bishop_moves(i uint64, white_to_play bool, buffer []Move
 			if offset == -7 && (index < 0 || col == int(row_length_dc)-1) {
 				break
 			}
-			if offset == 7 && (index < last_row_start || col == 0) {
+			if offset == 7 && (index >= last_row_start || col == 0) {
 				break
 			}
-			if offset == 9 && (index < last_row_start || col == int(row_length_dc)-1) {
+			if offset == 9 && (index >= last_row_start || col == int(row_length_dc)-1) {
 				break
 			}
-			move_to := 1 << index
+			index = index + offset
+			if index > 63 || index < 0 {
+				break
+			}
+			move_to := uint64(1) << index
 			if own_occupancy&uint64(move_to) > 0 {
 				break
 			}
-			if opponent_occupancy&uint64(move_to) > 0 {
-				capture = true
-			}
+			capture = opponent_occupancy&uint64(move_to) > 0
 			move := Move{From: int8(i), To: int8(index), Capture: capture}
 			buffer[n] = move
 			n++
@@ -442,7 +443,6 @@ func (l *DarkChess) get_bishop_moves(i uint64, white_to_play bool, buffer []Move
 			if capture {
 				break
 			}
-			index += offset
 		}
 	}
 	return n
@@ -480,108 +480,67 @@ func (l *DarkChess) ExecuteMove(move Move) {
 	first_row_end := 7
 	move_to_mask := uint64(0b1 << move.To)
 	move_from_mask := uint64(0b1 << move.From)
-	if l.white_rooks&move_to_mask > 0 {
-		l.white_rooks = l.white_rooks &^ move_to_mask
-	} else if l.white_knights&move_to_mask > 0 {
-		l.white_knights = l.white_knights &^ move_to_mask
-	} else if l.white_queen&move_to_mask > 0 {
-		l.white_queen = l.white_queen &^ move_to_mask
-	} else if l.white_king&move_to_mask > 0 {
-		l.white_king = l.white_king &^ move_to_mask
-	} else if l.white_pawns&move_to_mask > 0 {
-		l.white_pawns = l.white_pawns &^ move_to_mask
-	} else if l.white_bishop&move_to_mask > 0 {
-		l.white_bishop = l.white_bishop &^ move_to_mask
-	} else if l.black_rooks&move_to_mask > 0 {
-		l.black_rooks = l.black_rooks &^ move_to_mask
-	} else if l.black_knights&move_to_mask > 0 {
-		l.black_knights = l.black_knights &^ move_to_mask
-	} else if l.black_queen&move_to_mask > 0 {
-		l.black_queen = l.black_queen &^ move_to_mask
-	} else if l.black_king&move_to_mask > 0 {
-		l.black_king = l.black_king &^ move_to_mask
-	} else if l.black_pawns&move_to_mask > 0 {
-		l.black_pawns = l.black_pawns &^ move_to_mask
-	} else if l.black_bishop&move_to_mask > 0 {
-		l.black_bishop = l.black_bishop &^ move_to_mask
-	}
+	l.white_rooks = l.white_rooks &^ move_to_mask
+	l.white_knights = l.white_knights &^ move_to_mask
+	l.white_queen = l.white_queen &^ move_to_mask
+	l.white_king = l.white_king &^ move_to_mask
+	l.white_pawns = l.white_pawns &^ move_to_mask
+	l.white_bishop = l.white_bishop &^ move_to_mask
+	l.black_rooks = l.black_rooks &^ move_to_mask
+	l.black_knights = l.black_knights &^ move_to_mask
+	l.black_queen = l.black_queen &^ move_to_mask
+	l.black_king = l.black_king &^ move_to_mask
+	l.black_pawns = l.black_pawns &^ move_to_mask
+	l.black_bishop = l.black_bishop &^ move_to_mask
 
 	if l.white_rooks&move_from_mask > 0 {
 		l.white_rooks = (l.white_rooks &^ move_from_mask) | move_to_mask
-	} else if l.white_knights&move_from_mask > 0 {
+	}
+	if l.white_knights&move_from_mask > 0 {
 		l.white_knights = (l.white_knights &^ move_from_mask) | move_to_mask
-	} else if l.white_queen&move_from_mask > 0 {
+	}
+	if l.white_queen&move_from_mask > 0 {
 		l.white_queen = (l.white_queen &^ move_from_mask) | move_to_mask
-	} else if l.white_king&move_from_mask > 0 {
+	}
+	if l.white_king&move_from_mask > 0 {
 		l.white_king = (l.white_king &^ move_from_mask) | move_to_mask
-	} else if l.white_pawns&move_from_mask > 0 {
+	}
+	if l.white_pawns&move_from_mask > 0 {
 		if move.To >= int8(last_row_start) {
 			l.white_queen = l.white_queen | move_to_mask
 			l.white_pawns = l.white_pawns &^ move_from_mask
 		} else {
 			l.white_pawns = (l.white_pawns &^ move_from_mask) | move_to_mask
 		}
-	} else if l.white_bishop&move_from_mask > 0 {
+	}
+	if l.white_bishop&move_from_mask > 0 {
 		l.white_bishop = (l.white_bishop &^ move_from_mask) | move_to_mask
-	} else if l.black_rooks&move_from_mask > 0 {
+	}
+	if l.black_rooks&move_from_mask > 0 {
 		l.black_rooks = (l.black_rooks &^ move_from_mask) | move_to_mask
-	} else if l.black_knights&move_from_mask > 0 {
+	}
+	if l.black_knights&move_from_mask > 0 {
 		l.black_knights = (l.black_knights &^ move_from_mask) | move_to_mask
-	} else if l.black_queen&move_from_mask > 0 {
+	}
+	if l.black_queen&move_from_mask > 0 {
 		l.black_queen = (l.black_queen &^ move_from_mask) | move_to_mask
-	} else if l.black_king&move_from_mask > 0 {
+	}
+	if l.black_king&move_from_mask > 0 {
 		l.black_king = (l.black_king &^ move_from_mask) | move_to_mask
-	} else if l.black_pawns&move_from_mask > 0 {
+	}
+	if l.black_pawns&move_from_mask > 0 {
 		if move.To <= int8(first_row_end) {
 			l.black_queen = l.black_queen | move_to_mask
 			l.black_pawns = l.black_pawns &^ move_from_mask
 		} else {
 			l.black_pawns = (l.black_pawns &^ move_from_mask) | move_to_mask
 		}
-	} else if l.black_bishop&move_from_mask > 0 {
+	}
+	if l.black_bishop&move_from_mask > 0 {
 		l.black_bishop = (l.black_bishop &^ move_from_mask) | move_to_mask
 	}
 	l.number_of_moves++
 	l.whiteToPlay = !l.whiteToPlay
-
-	l.set_occupancy_boards()
-}
-
-func (l *DarkChess) UndoMove(move Move) {
-	l.number_of_moves--
-	l.whiteToPlay = !l.whiteToPlay
-
-	move_to_mask := uint64(0b1 << move.To)
-	move_from_mask := uint64(0b1 << move.From)
-
-	// undo move
-	if l.white_pawns&move_to_mask > 0 {
-		l.white_pawns = (l.white_pawns &^ move_to_mask) | move_from_mask
-		if move.To >= 30 {
-			l.white_queen = l.white_queen &^ move_to_mask
-		}
-	} else if l.white_rooks&move_to_mask > 0 {
-		l.white_rooks = (l.white_rooks &^ move_to_mask) | move_from_mask
-	} else if l.white_knights&move_to_mask > 0 {
-		l.white_knights = (l.white_knights &^ move_to_mask) | move_from_mask
-	} else if l.white_queen&move_to_mask > 0 {
-		l.white_queen = (l.white_queen &^ move_to_mask) | move_from_mask
-	} else if l.white_king&move_from_mask > 0 {
-		l.white_king = (l.white_king &^ move_to_mask) | move_from_mask
-	} else if l.black_pawns&move_to_mask > 0 {
-		l.black_pawns = (l.black_pawns &^ move_to_mask) | move_from_mask
-		if move.To <= 5 {
-			l.black_queen = l.black_queen &^ move_to_mask
-		}
-	} else if l.black_rooks&move_to_mask > 0 {
-		l.black_rooks = (l.black_rooks &^ move_to_mask) | move_from_mask
-	} else if l.black_knights&move_to_mask > 0 {
-		l.black_knights = (l.black_knights &^ move_to_mask) | move_from_mask
-	} else if l.black_queen&move_to_mask > 0 {
-		l.black_queen = (l.black_queen &^ move_to_mask) | move_from_mask
-	} else if l.black_king&move_to_mask > 0 {
-		l.black_king = (l.black_king &^ move_to_mask) | move_from_mask
-	}
 
 	l.set_occupancy_boards()
 }
@@ -644,7 +603,7 @@ func (l *DarkChess) Create_fallback_particle(belief ChessVariation, white bool) 
 			copy.black_rooks |= no_information & concrete_belief.black_rooks
 			// iterate over belief and copy and check if they are equal (after last move is executed in belief)
 		} else {
-			no_information := concrete_belief.black_occupancy & ^view
+			no_information := concrete_belief.white_occupancy & ^view
 			copy.white_bishop |= no_information & concrete_belief.white_bishop
 			copy.white_king |= no_information & concrete_belief.white_king
 			copy.white_knights |= no_information & concrete_belief.white_knights
@@ -721,7 +680,7 @@ func (l *DarkChess) Hash() uint64 {
 		} else if l.black_king&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(King)]
 		} else if l.black_bishop&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(King)]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Bishop)]
 		}
 	}
 	return hash

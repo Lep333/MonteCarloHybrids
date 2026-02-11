@@ -197,29 +197,6 @@ func (d *DarkPawnChess) ExecuteMove(move Move) {
 	d.create_view_mask()
 }
 
-func (d *DarkPawnChess) UndoMove(move Move) {
-	d.whiteToPlay = !d.whiteToPlay
-	d.number_of_moves = d.number_of_moves - 1
-	var mask_from uint = 1 << move.From
-	var mask_to uint = 1 << move.To
-	var mask uint = mask_from | mask_to
-	if d.whiteToPlay {
-		d.white_pawns ^= mask
-		if move.Capture {
-			d.black_pawns = d.black_pawns | mask_to
-		}
-	} else {
-		if move.Capture {
-			d.white_pawns = d.white_pawns | mask_to
-		}
-		d.black_pawns ^= mask
-	}
-	d.move_count = d.get_moves(d.moves[:])
-	d.create_view_mask()
-}
-
-var static_moves = [20]Move{}
-
 func (d *DarkPawnChess) CreateView(white bool) ChessVariation {
 	copy := *d
 	copy.set_vision()

@@ -24,7 +24,6 @@ type ChessVariation interface {
 	GetNumberOfMoves() int
 	PossibleMoves() []Move
 	ExecuteMove(move Move)
-	UndoMove(move Move)
 	CreateView(white bool) ChessVariation
 	GetView(white bool) uint64
 	ViewHash(white bool) uint64

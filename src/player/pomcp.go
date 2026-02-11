@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const NODE_MAX = 80000
+const NODE_MAX = 150000
 const BELIEFS_MAX = 10000
 
 type POMCP struct {
@@ -443,7 +443,7 @@ func (p *POMCP) rollout_move_selection(s chess.ChessVariation, possible_moves []
 		}
 	}
 	var selected_move chess.Move
-	if len(capture_moves) > 0 && rand.Float64() < p.Settings.Rollout_capture {
+	if capture_moves_count > 0 && rand.Float64() < p.Settings.Rollout_capture {
 		selected_move = random_element(capture_moves[:capture_moves_count])
 	} else {
 		selected_move = random_element(possible_moves)

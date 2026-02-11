@@ -550,52 +550,12 @@ func (l *LosAlamosChess) ExecuteMove(move Move) {
 	l.set_occupancy_boards()
 }
 
-func (l *LosAlamosChess) UndoMove(move Move) {
-	l.number_of_moves--
-	l.whiteToPlay = !l.whiteToPlay
-
-	move_to_mask := uint(0b1 << move.To)
-	move_from_mask := uint(0b1 << move.From)
-
-	// undo move
-	if l.white_pawns&move_to_mask > 0 {
-		l.white_pawns = (l.white_pawns &^ move_to_mask) | move_from_mask
-		if move.To >= 30 {
-			l.white_queen = l.white_queen &^ move_to_mask
-		}
-	} else if l.white_rooks&move_to_mask > 0 {
-		l.white_rooks = (l.white_rooks &^ move_to_mask) | move_from_mask
-	} else if l.white_knights&move_to_mask > 0 {
-		l.white_knights = (l.white_knights &^ move_to_mask) | move_from_mask
-	} else if l.white_queen&move_to_mask > 0 {
-		l.white_queen = (l.white_queen &^ move_to_mask) | move_from_mask
-	} else if l.white_king&move_from_mask > 0 {
-		l.white_king = (l.white_king &^ move_to_mask) | move_from_mask
-	} else if l.black_pawns&move_to_mask > 0 {
-		l.black_pawns = (l.black_pawns &^ move_to_mask) | move_from_mask
-		if move.To <= 5 {
-			l.black_queen = l.black_queen &^ move_to_mask
-		}
-	} else if l.black_rooks&move_to_mask > 0 {
-		l.black_rooks = (l.black_rooks &^ move_to_mask) | move_from_mask
-	} else if l.black_knights&move_to_mask > 0 {
-		l.black_knights = (l.black_knights &^ move_to_mask) | move_from_mask
-	} else if l.black_queen&move_to_mask > 0 {
-		l.black_queen = (l.black_queen &^ move_to_mask) | move_from_mask
-	} else if l.black_king&move_to_mask > 0 {
-		l.black_king = (l.black_king &^ move_to_mask) | move_from_mask
-	}
-	l.set_occupancy_boards()
-}
-
 func (l *LosAlamosChess) set_occupancy_boards() {
 	l.white_occupancy = l.white_rooks | l.white_knights |
 		l.white_queen | l.white_king | l.white_pawns
 	l.black_occupancy = l.black_rooks | l.black_knights |
 		l.black_queen | l.black_king | l.black_pawns
 }
-
-var moves = [200]Move{}
 
 func (l *LosAlamosChess) GetView(white bool) uint64 {
 	return uint64(l.compute_vision(white))
@@ -614,7 +574,7 @@ func (l *LosAlamosChess) Create_fallback_particle(belief ChessVariation, white b
 			copy.black_rooks |= no_information & concrete_belief.black_rooks
 			// iterate over belief and copy and check if they are equal (after last move is executed in belief)
 		} else {
-			no_information := concrete_belief.black_occupancy & uint(^view)
+			no_information := concrete_belief.white_occupancy & uint(^view)
 			copy.white_king |= no_information & concrete_belief.white_king
 			copy.white_knights |= no_information & concrete_belief.white_knights
 			copy.white_pawns |= no_information & concrete_belief.white_pawns
