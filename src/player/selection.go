@@ -95,7 +95,7 @@ func (g *GreedySelection) Select(s chess_variation.ChessVariation) chess_variati
 
 type EarlyTermination interface {
 	EarlyPlayoutTermination(s chess_variation.ChessVariation,
-		depth float64) (bool, float64)
+		depth float64, white bool) (bool, float64)
 }
 
 type EvaluationCutOff struct {
@@ -103,11 +103,7 @@ type EvaluationCutOff struct {
 }
 
 func (e *EvaluationCutOff) EarlyPlayoutTermination(
-	s chess_variation.ChessVariation, depth float64) (bool, float64) {
-	white := true
-	if s.GetNumberOfMoves()%2 == 1 {
-		white = false
-	}
+	s chess_variation.ChessVariation, depth float64, white bool) (bool, float64) {
 	eval := s.Heuristic(white)
 	if eval >= e.Threshold {
 		return true, 1
@@ -124,13 +120,8 @@ type EarlyPlayoutTerminationStruct struct {
 // returns heuristic of best move
 func (e *EarlyPlayoutTerminationStruct) EarlyPlayoutTermination(
 	s chess_variation.ChessVariation,
-	depth float64) (bool, float64) {
-	white := true
-	if s.GetNumberOfMoves()%2 == 1 {
-		white = false
-	}
-
-	max_score := math.Inf(-1)
+	depth float64, white bool) (bool, float64) {
+	max_score := float64(-1)
 	if depth < e.Max_depth {
 		return false, 0.0
 	} else {
@@ -168,7 +159,7 @@ type MCTS_with_informed_cutoffs struct {
 }
 
 func (m *MCTS_with_informed_cutoffs) EarlyPlayoutTermination(
-	s chess_variation.ChessVariation, depth float64) (bool, float64) {
+	s chess_variation.ChessVariation, depth float64, white bool) (bool, float64) {
 	score := -1.0
 
 	if depth >= m.Max_depth {

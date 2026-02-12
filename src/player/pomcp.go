@@ -322,7 +322,7 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int, current_gamma float64
 	// early playout termination?
 	if p.Settings.Early_playout_termination != nil {
 		termination, value := p.Settings.Early_playout_termination.
-			EarlyPlayoutTermination(s, float64(depth))
+			EarlyPlayoutTermination(s, float64(depth), p.Started_playing)
 		if termination {
 			return value
 		}
