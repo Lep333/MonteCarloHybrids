@@ -6,19 +6,23 @@ import matplotlib
 import matplotlib as mpl
 from scipy.stats import binomtest
 
-file_name = "results.csv"
-csv = ""
-
+csv = []
+files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.csv","results/dpc_evaluation_cut_off.csv",
+         "results/dpc_evaluation_cut_off.csv",
+         "results/dpc_greedy.csv", "results/dpc_ic.csv", "results/dpc_ir.csv",
+         "results/dpc_k_best.csv", "results/dpc_rollout_capture.csv"]
+    
 def main():
-    with open(file_name, mode="+r") as f:
-        csv = f.readlines()
+    for file in files:
+        with open(file, mode="+r") as f:
+            csv.extend(f.readlines())
 
     result_dict = {}
     rollout_capture_index = 10
     #key_field_indexes = [time_limit, ucb_c_key, rollout_capture_index]
     i = 0
     for i, line in enumerate(csv):
-        if i == 0:
+        if i == 0 or line == "":
             continue
         fields = line.replace("\n", "").split(",")
         player1, player2, result, settings1, settings2, moves, no_rollouts, no_beliefs = fields
@@ -113,10 +117,16 @@ def print_heatmap(result_dict: dict[list]):
 def print_hybrids(result_dict: dict[list]):
     diagrams = [
         (
-            "DPC_OM",
-            [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
+            "DPC_UCT",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
+        ),
+        (
+            "DPC_CORRECTIVE",
+            [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
+            "Korrektur",
+            "Schwellwert Zug zu wählen"
         ),
         (
             "DPC_GREEDY",
@@ -131,16 +141,16 @@ def print_hybrids(result_dict: dict[list]):
             "Abbruchstiefe"
         ),
         (
-            "DPC_CAPTURE_PREF",
+            "DPC_EVALUATION_CUT_OFF",
+            [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
+            "Early-Playout-Termination",
+            "Abbruchstiefe"
+        ),
+        (
+            "DPC_ROLLOUT_PREF",
             [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
             "Schlagpräfarenz",
             "Schlagwahrscheinlichkeit"
-        ),
-        (
-            "DPC_EVALUATION_CUT_OFF",
-            [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Frühzeitige Abbrüche",
-            "Abbruchsschwellwert"
         ),
         (
             "DPC_K_BEST",
@@ -154,6 +164,15 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
             ],
+            "Vielversprechende Abbrüche",
+            ["Suchtiefe", "Abbruchstiefe"]
+        ),
+        (
+            "DPC_IR",
+            [
+                r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+             ],
             "Vielversprechende Abbrüche",
             ["Suchtiefe", "Abbruchstiefe"]
         ),

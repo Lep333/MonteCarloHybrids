@@ -21,9 +21,8 @@ type CorrectiveSelection struct {
 	Epsilon float64
 }
 
-var move_scores [100]MoveScore
-
 func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_variation.Move {
+	var move_scores [400]MoveScore
 	white := s.GetNumberOfMoves()%2 == 0
 	default_value := s.Heuristic(white)
 	moves := s.PossibleMoves()
@@ -50,7 +49,7 @@ func (c *CorrectiveSelection) Select(s chess_variation.ChessVariation) chess_var
 		score_sum += score
 	}
 	score_sum *= rand.Float64()
-	for _, move := range move_scores {
+	for _, move := range move_scores[:move_scores_count] {
 		score_sum -= move.score
 		if score_sum < 0 {
 			return move.move
