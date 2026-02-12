@@ -124,7 +124,7 @@ def print_hybrids(result_dict: dict[list]):
         ),
         (
             "DPC_CORRECTIVE",
-            [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
+            [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur",
             "Schwellwert Zug zu wählen"
         ),
