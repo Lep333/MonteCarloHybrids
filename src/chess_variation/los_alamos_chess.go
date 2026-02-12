@@ -700,11 +700,10 @@ func (l *LosAlamosChess) GameOver() (bool, int) {
 func (l *LosAlamosChess) Heuristic(white bool) float64 {
 	over, result := l.GameOver()
 	if over {
-		if white {
-			return float64(result)
-		} else {
-			return -float64(result)
+		if !white {
+			result = -result
 		}
+		return float64(result)
 	}
 	value := 0.0
 	white_material := 0.0

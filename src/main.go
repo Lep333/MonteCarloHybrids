@@ -16,31 +16,34 @@ func main() {
 	tune_settings := player.Settings{
 		Termination_parameter:     1000,
 		Gamma:                     0.95,
-		Epsilon:                   0.1,
-		Ucb_c:                     10,
+		Epsilon:                   0.05,
+		Ucb_c:                     5,
 		Rollout_capture:           0.0,
 		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
 		Early_playout_termination: nil,
-		POMCP_name:                "DC_UCT",
+		POMCP_name:                "DC_TEST",
 		Opponent_modelling:        true,
-		OM_Threshold:              0.5,
+		OM_Threshold:              0.2,
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
 		Gamma:                 0.95,
-		Epsilon:               0.1,
-		Ucb_c:                 1,
+		Epsilon:               0.05,
+		Ucb_c:                 5,
 		Rollout_capture:       0,
 		Opponent_modelling:    true,
-		OM_Threshold:          0.5,
+		OM_Threshold:          0.2,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{10}
+	threshs := []float64{0.5}
 	for _, thresh := range threshs {
-		tune_settings.Ucb_c = thresh
+		tune_settings.Rollout_capture = thresh
+		tune_settings.Early_playout_termination = &player.EvaluationCutOff{
+			Threshold: 0.3,
+		}
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
@@ -53,9 +56,9 @@ func main() {
 			Last_move:       chess_variation.Move{},
 			Settings:        tune_settings,
 		}
-		iterations := 100
+		iterations := 20
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.DarkChess{}
+			game := chess_variation.DarkPawnChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2

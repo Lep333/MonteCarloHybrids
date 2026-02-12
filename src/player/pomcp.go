@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const NODE_MAX = 150000
+const NODE_MAX = 10000
 const BELIEFS_MAX = 10000
 
 type POMCP struct {
@@ -345,11 +345,7 @@ func (p *POMCP) rollout(s chess.ChessVariation, depth int, current_gamma float64
 	game_over, result := new_s.GameOver()
 	if game_over {
 		if !p.Started_playing {
-			if result == 1 {
-				result = -1
-			} else {
-				result = 1
-			}
+			result = -result
 		}
 		return float64(result) // 1 for win -1 for lose
 	}
@@ -451,10 +447,9 @@ func (p *POMCP) rollout_move_selection(s chess.ChessVariation, possible_moves []
 	return selected_move
 }
 
-var not_visited_action = [1000]chess.Move{}
-var not_visited_count = 0
-
 func (p *POMCP) get_most_promising_action_by_ucb(s chess.ChessVariation, h *Node) chess.Move {
+	var not_visited_action = [1000]chess.Move{}
+	var not_visited_count = 0
 	var max_ucb float64 = math.Inf(-1)
 	var max_child *Node
 	not_visited_count = 0

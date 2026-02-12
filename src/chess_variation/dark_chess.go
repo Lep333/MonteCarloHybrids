@@ -2,6 +2,7 @@ package chess_variation
 
 import (
 	"math"
+	"math/bits"
 	"math/rand/v2"
 	"strconv"
 )
@@ -16,7 +17,6 @@ var dc_white_pawns_moves [no_fields_dc]uint64
 var dc_white_pawns_capture [no_fields_dc]uint64
 var dc_black_pawns_moves [no_fields_dc]uint64
 var dc_black_pawns_capture [no_fields_dc]uint64
-var dc_white_rooks_moves [no_fields_dc]uint64
 var dc_knights_moves [no_fields_dc]uint64
 var dc_king_moves [no_fields_dc]uint64
 var dc_zobrist_numbers [len_zobrist_numbers_dc]uint64
@@ -183,7 +183,7 @@ func (l *DarkChess) GetNumberOfMoves() int {
 }
 
 func (l *DarkChess) PossibleMoves() []Move {
-	moves := [200]Move{}
+	moves := [400]Move{}
 	l.set_occupancy_boards()
 	l.move_count = l.generate_moves(moves[:])
 	return moves[:l.move_count]
@@ -450,7 +450,7 @@ func (l *DarkChess) get_bishop_moves(i uint64, white_to_play bool, buffer []Move
 
 func (l *DarkChess) compute_vision(white bool) uint64 {
 	flip_players_turn := false
-	local_moves := [200]Move{}
+	local_moves := [400]Move{}
 	vision := uint64(0)
 	if white != l.whiteToPlay {
 		l.whiteToPlay = !l.whiteToPlay
@@ -573,7 +573,7 @@ func (l *DarkChess) CreateView(white bool) ChessVariation {
 	copy.white_knights &= vision
 	copy.white_queen &= vision
 	copy.white_king &= vision
-	copy.white_pawns &= vision
+	copy.white_bishop &= vision
 	copy.black_pawns &= vision
 	copy.black_rooks &= vision
 	copy.black_knights &= vision
@@ -595,7 +595,7 @@ func (l *DarkChess) Create_fallback_particle(belief ChessVariation, white bool) 
 		view := l.GetView(white)
 		if white {
 			no_information := concrete_belief.black_occupancy & ^view
-			copy.black_bishop |= no_information & concrete_belief.black_bishop
+			//copy.black_bishop |= no_information & concrete_belief.black_bishop
 			copy.black_king |= no_information & concrete_belief.black_king
 			copy.black_knights |= no_information & concrete_belief.black_knights
 			copy.black_pawns |= no_information & concrete_belief.black_pawns
@@ -604,7 +604,7 @@ func (l *DarkChess) Create_fallback_particle(belief ChessVariation, white bool) 
 			// iterate over belief and copy and check if they are equal (after last move is executed in belief)
 		} else {
 			no_information := concrete_belief.white_occupancy & ^view
-			copy.white_bishop |= no_information & concrete_belief.white_bishop
+			//copy.white_bishop |= no_information & concrete_belief.white_bishop
 			copy.white_king |= no_information & concrete_belief.white_king
 			copy.white_knights |= no_information & concrete_belief.white_knights
 			copy.white_pawns |= no_information & concrete_belief.white_pawns
@@ -668,7 +668,7 @@ func (l *DarkChess) Hash() uint64 {
 		} else if l.white_king&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+int(King)]
 		} else if l.white_bishop&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+int(Bishop)]
+			//hash ^= dc_zobrist_numbers[i*gap+int(Bishop)]
 		} else if l.black_pawns&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types]
 		} else if l.black_rooks&(1<<i) > 0 {
@@ -680,7 +680,7 @@ func (l *DarkChess) Hash() uint64 {
 		} else if l.black_king&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(King)]
 		} else if l.black_bishop&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Bishop)]
+			//hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Bishop)]
 		}
 	}
 	return hash
@@ -707,11 +707,10 @@ func (l *DarkChess) GameOver() (bool, int) {
 func (l *DarkChess) Heuristic(white bool) float64 {
 	over, result := l.GameOver()
 	if over {
-		if white {
-			return float64(result)
-		} else {
-			return -float64(result)
+		if !white {
+			result = -result
 		}
+		return float64(result)
 	}
 	value := 0.0
 	white_material := 0.0
@@ -741,16 +740,8 @@ func (l *DarkChess) Heuristic(white bool) float64 {
 	}
 	white_mobility := 0
 	black_mobility := 0
-	if white {
-		white_mobility = len(l.PossibleMoves())
-		l.whiteToPlay = !l.whiteToPlay
-		black_mobility = len(l.PossibleMoves())
-	} else {
-		black_mobility = len(l.PossibleMoves())
-		l.whiteToPlay = !l.whiteToPlay
-		white_mobility = len(l.PossibleMoves())
-	}
-	l.whiteToPlay = !l.whiteToPlay
+	white_mobility = bits.OnesCount(uint(l.compute_vision(true)))
+	black_mobility = bits.OnesCount(uint(l.compute_vision(false)))
 	avg_material := (white_material + black_material) / 2
 	value = (white_material - black_material + float64(l.pawn_structure()) + 0.1*float64(white_mobility-black_mobility)) / avg_material
 	value = math.Max(math.Min(value, 1), -1)
@@ -768,11 +759,11 @@ func (l *DarkChess) pawn_structure() int {
 	white_pawns_cols := make(map[int]bool)
 	black_pawns_cols := make(map[int]bool)
 	for col := 0; col < int(row_length_dc); col++ {
+		white_pawn_in_col := false
+		white_double_in_col := false
+		black_pawn_in_col := false
+		black_double_in_col := false
 		for field := col; field < int(no_fields_dc); field += int(row_length_dc) {
-			white_pawn_in_col := false
-			white_double_in_col := false
-			black_pawn_in_col := false
-			black_double_in_col := false
 			if field%int(row_length_dc) == 0 {
 				white_pawn_in_col = false
 				white_double_in_col = false
