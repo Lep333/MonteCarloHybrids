@@ -23,7 +23,7 @@ func main() {
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
 		Early_playout_termination: nil,
-		POMCP_name:                "DPC_EVALUATION_CUT_OFF",
+		POMCP_name:                "DPC_IC",
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
@@ -34,10 +34,11 @@ func main() {
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{0.8}
+	threshs := []float64{2}
 	for _, thresh := range threshs {
-		tune_settings.Early_playout_termination = &player.EvaluationCutOff{
-			Threshold: thresh,
+		tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
+			Max_depth:    16,
+			Search_depth: int(thresh),
 		}
 		player1 = &player.POMCP{
 			Root:            nil,
@@ -104,7 +105,7 @@ func print_game_result(player1 player.Player, player2 player.Player,
 }
 
 func save_results(result string) {
-	results_file_name := "results/dpc_evaluation_cut_off.csv"
+	results_file_name := "results/dpc_ic.csv"
 	f, err := os.OpenFile(results_file_name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
