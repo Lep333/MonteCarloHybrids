@@ -11,7 +11,7 @@ files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.cs
          "results/dpc_evaluation_cut_off.csv",
          "results/dpc_greedy.csv", "results/dpc_ic.csv", "results/dpc_ir.csv",
          "results/dpc_k_best.csv", "results/dpc_rollout_capture.csv",
-         "results/LAC_UCT.csv"] #"results/LAC_OM.csv"
+         "results/LAC_UCT.csv", "results/LAC_OM.csv"]
     
 def main():
     for file in files:

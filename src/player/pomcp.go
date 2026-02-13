@@ -113,9 +113,7 @@ func (p *POMCP) GetMove(board chess.ChessVariation, whiteToPlay bool) chess.Move
 	selected_move := p.search(p.Root)
 	p.NBeliefs = len(p.beliefs.beliefs)
 	p.Last_move = selected_move
-	if (selected_move == chess.Move{}) {
-		return random_element(board.PossibleMoves())
-	}
+
 	return selected_move
 }
 

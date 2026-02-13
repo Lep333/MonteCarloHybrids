@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var name = "LAC_OM"
+var name = "LAC_EVALUATION_CUT_OFF"
 
 func main() {
 	// web_server()
@@ -27,6 +27,7 @@ func main() {
 		Early_playout_termination: nil,
 		POMCP_name:                name,
 		Opponent_modelling:        true,
+		OM_Threshold:              0.4,
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
@@ -34,12 +35,16 @@ func main() {
 		Epsilon:               0.05,
 		Ucb_c:                 5,
 		Rollout_capture:       0,
+		Opponent_modelling:    true,
+		OM_Threshold:          0.4,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{0.8}
+	threshs := []float64{0.2, 0.4, 0.6, 0.8}
 	for _, thresh := range threshs {
-		tune_settings.OM_Threshold = thresh
+		tune_settings.Early_playout_termination = &player.EvaluationCutOff{
+			Threshold: thresh,
+		}
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
