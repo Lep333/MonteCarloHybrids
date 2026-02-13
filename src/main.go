@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var name = "LAC_OM"
+
 func main() {
 	// web_server()
 	var player1, player2 player.Player
@@ -23,7 +25,8 @@ func main() {
 		Selection_hybrid:          nil,
 		Rollout_selection:         nil,
 		Early_playout_termination: nil,
-		POMCP_name:                "DPC_IC",
+		POMCP_name:                name,
+		Opponent_modelling:        true,
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
@@ -34,11 +37,9 @@ func main() {
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{2}
+	threshs := []float64{0.8}
 	for _, thresh := range threshs {
-		tune_settings.Rollout_selection = &player.GreedySelection{
-			Epsilon: thresh,
-		}
+		tune_settings.OM_Threshold = thresh
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
@@ -104,7 +105,7 @@ func print_game_result(player1 player.Player, player2 player.Player,
 }
 
 func save_results(result string) {
-	results_file_name := "results/dpc_ic.csv"
+	results_file_name := fmt.Sprintf("results/%v.csv", name)
 	f, err := os.OpenFile(results_file_name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const NODE_MAX = 10000
+const NODE_MAX = 50000
 const BELIEFS_MAX = 10000
 
 type POMCP struct {
