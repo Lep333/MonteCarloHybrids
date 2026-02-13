@@ -409,16 +409,17 @@ func (l *DarkChess) get_bishop_moves(i uint64, white_to_play bool, buffer []Move
 		opponent_occupancy = l.white_occupancy
 	}
 	offsets := []int{9, 7, -7, -9}
-	last_row_start := int(no_fields_dc - row_length_dc)
+	last_row_start := uint64(no_fields_dc - row_length_dc)
 	for _, offset := range offsets {
-		index := int(i)
+		index := i
 		capture := false
 		for {
-			col := index % int(row_length_dc)
-			if offset == -9 && (index < 0 || col == 0) {
+			col := int(index) % int(row_length_dc)
+			//row := int(index) / int(row_length_dc)
+			if offset == -9 && (index < row_length_dc || col == 0) {
 				break
 			}
-			if offset == -7 && (index < 0 || col == int(row_length_dc)-1) {
+			if offset == -7 && (index < row_length_dc || col == int(row_length_dc)-1) {
 				break
 			}
 			if offset == 7 && (index >= last_row_start || col == 0) {
@@ -427,11 +428,8 @@ func (l *DarkChess) get_bishop_moves(i uint64, white_to_play bool, buffer []Move
 			if offset == 9 && (index >= last_row_start || col == int(row_length_dc)-1) {
 				break
 			}
-			index = index + offset
-			if index > 63 || index < 0 {
-				break
-			}
-			move_to := uint64(1) << index
+			index += uint64(offset)
+			move_to := 1 << index
 			if own_occupancy&uint64(move_to) > 0 {
 				break
 			}
@@ -636,17 +634,17 @@ func (l *DarkChess) ViewHash(white bool) uint64 {
 		} else if l.white_bishop&mask&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+int(Bishop)]
 		} else if l.black_pawns&mask&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types_dc]
 		} else if l.black_rooks&mask&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Rook)]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types_dc+int(Rook)]
 		} else if l.black_knights&mask&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Knight)]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types_dc+int(Knight)]
 		} else if l.black_queen&mask&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Queen)]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types_dc+int(Queen)]
 		} else if l.black_king&mask&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(King)]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types_dc+int(King)]
 		} else if l.black_bishop&mask&(1<<i) > 0 {
-			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Bishop)]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types_dc+int(Bishop)]
 		}
 	}
 	return hash

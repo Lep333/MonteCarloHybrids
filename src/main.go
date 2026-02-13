@@ -36,9 +36,8 @@ func main() {
 	pomcp_wins := 0
 	threshs := []float64{2}
 	for _, thresh := range threshs {
-		tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
-			Max_depth:    16,
-			Search_depth: int(thresh),
+		tune_settings.Rollout_selection = &player.GreedySelection{
+			Epsilon: thresh,
 		}
 		player1 = &player.POMCP{
 			Root:            nil,

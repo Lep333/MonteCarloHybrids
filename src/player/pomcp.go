@@ -452,7 +452,6 @@ func (p *POMCP) get_most_promising_action_by_ucb(s chess.ChessVariation, h *Node
 	var not_visited_count = 0
 	var max_ucb float64 = math.Inf(-1)
 	var max_child *Node
-	not_visited_count = 0
 	not_visited := false
 	white := p.Started_playing
 	for _, a := range s.PossibleMoves() {
