@@ -451,13 +451,11 @@ func (p *POMCP) rollout_move_selection(s chess.ChessVariation, possible_moves []
 	return selected_move
 }
 
-var not_visited_action = [1000]chess.Move{}
-var not_visited_count = 0
-
 func (p *POMCP) get_most_promising_action_by_ucb(s chess.ChessVariation, h *Node) chess.Move {
+	var not_visited_action = [1000]chess.Move{}
+	var not_visited_count = 0
 	var max_ucb float64 = math.Inf(-1)
 	var max_child *Node
-	not_visited_count = 0
 	not_visited := false
 	white := p.Started_playing
 	for _, a := range s.PossibleMoves() {

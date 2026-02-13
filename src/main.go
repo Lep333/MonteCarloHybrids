@@ -40,7 +40,9 @@ func main() {
 	pomcp_wins := 0
 	threshs := []float64{10}
 	for _, thresh := range threshs {
-		tune_settings.Ucb_c = thresh
+		tune_settings.Rollout_selection = &player.GreedySelection{
+			Epsilon: thresh,
+		}
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
