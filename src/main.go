@@ -54,7 +54,7 @@ func main() {
 		}
 		iterations := 100
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.DarkPawnChess{}
+			game := chess_variation.LosAlamosChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2

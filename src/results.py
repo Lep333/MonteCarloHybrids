@@ -10,7 +10,8 @@ csv = []
 files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.csv","results/dpc_evaluation_cut_off.csv",
          "results/dpc_evaluation_cut_off.csv",
          "results/dpc_greedy.csv", "results/dpc_ic.csv", "results/dpc_ir.csv",
-         "results/dpc_k_best.csv", "results/dpc_rollout_capture.csv"]
+         "results/dpc_k_best.csv", "results/dpc_rollout_capture.csv",
+         "results/LAC_UCT.csv"] #"results/LAC_OM.csv"
     
 def main():
     for file in files:
@@ -166,6 +167,18 @@ def print_hybrids(result_dict: dict[list]):
             ],
             "Vielversprechende Abbrüche",
             ["Suchtiefe", "Abbruchstiefe"]
+        ),
+        (
+            "LAC_UCT",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "LAC_OM",
+            [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
         ),
         (
             "DPC_IR",
