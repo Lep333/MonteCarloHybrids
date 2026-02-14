@@ -14,8 +14,11 @@ files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.cs
          "results/LAC_UCT.csv", "results/LAC_OM.csv", "results/LAC_CAPTURE_PREF.csv",
          "results/LAC_CORRECTIVE.csv", "results/LAC_EPT.csv",
          "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_GREEDY.csv",
-         "results/LAC_IC.csv", "results/LAC_IR.csv", "results/LAC_K_BEST.csv"
-         ]
+         "results/LAC_IC.csv", "results/LAC_IR.csv", "results/LAC_K_BEST.csv",
+         "results/LAC_UCT.csv", "results/LAC_OM.csv", "results/LAC_GREEDY.csv",
+         "results/LAC_CAPTURE_PREF.csv", "results/LAC_CORRECTIVE.csv", "results/LAC_EPT.csv",
+         "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_K_BEST.csv",  
+         "results/DC_UCT.csv", "results/DC_OM.csv"]
     
 def main():
     for file in files:
@@ -142,14 +145,14 @@ def print_hybrids(result_dict: dict[list]):
         (
             "DPC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Early-Playout-Termination",
+            "Frühzeitige-Abbrüche",
             "Abbruchstiefe"
         ),
         (
             "DPC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Early-Playout-Termination",
-            "Abbruchstiefe"
+            "Evaluation-Cut-Off",
+            "Abbruchsschwellwert"
         ),
         (
             "DPC_ROLLOUT_PREF",
@@ -185,16 +188,13 @@ def print_hybrids(result_dict: dict[list]):
             "c"
         ),
         (
-            "DPC_IR",
-            [
-                r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
-             ],
-            "Vielversprechende Abbrüche",
-            ["Suchtiefe", "Abbruchstiefe"]
+            "DC_UCT",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
         ),
         (
-            "LAC_OM",
+            "DC_OM",
             [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
             "c"
@@ -226,7 +226,7 @@ def print_hybrids(result_dict: dict[list]):
         (
             "LAC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Frühzeitige Abbrüche",
+            "Evaluation-Cut-Off-Hybrid",
             "Abbruchsschwellwert"
         ),
         (
@@ -252,6 +252,15 @@ def print_hybrids(result_dict: dict[list]):
              ],
             "Vielversprechende Rollouts",
             ["Epsilon", "Suchtiefe"]
+        ),
+        (
+            "DPC_IR",
+            [
+                r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+             ],
+            "Vielversprechende Rollouts",
+            ["Suchtiefe", "Abbruchstiefe"]
         ),
     ]
 
@@ -302,7 +311,16 @@ def print_hybrids(result_dict: dict[list]):
         ax.set_ylim(0,100)
         ax.set_yticks(np.arange(0, 101, 10))
         fig.tight_layout()
-        plt.savefig(f"{name}.png", dpi=300)
+        plt.rcParams.update({
+            'font.size': 10,          # Basisgröße (entspricht etwa 10pt/11pt in LaTeX)
+            'axes.titlesize': 10,
+            'axes.labelsize': 9,
+            'xtick.labelsize': 8,
+            'ytick.labelsize': 8,
+            'legend.fontsize': 8,
+            'figure.figsize': (3.2, 2.5) # WICHTIG: Kleine Fläche erzwingt große Schrift
+        })
+        plt.savefig(f"{name}.pdf", format="pdf", bbox_inches="tight")
         plt.close()
 
 def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_axis_label: str):
@@ -355,7 +373,9 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
     unique_x = sorted({v for vals in x.values() for v in vals})
     ax.set_xticks(unique_x)
     fig.tight_layout()
-    plt.savefig(f"{name}.png", dpi=300)
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), 
+        ncol=2, fontsize=8)
+    plt.savefig(f"{name}.pdf", format="pdf", bbox_inches="tight")
     plt.close()
 
 def sum_result(category: str, results: dict, line: list, field_no: int):

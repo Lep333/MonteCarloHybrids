@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var name = "DPC_IR"
+var name = "DC_CORRECTIVE"
 
 func main() {
 	// web_server()
@@ -19,7 +19,7 @@ func main() {
 		Termination_parameter:     1000,
 		Gamma:                     0.95,
 		Epsilon:                   0.05,
-		Ucb_c:                     5,
+		Ucb_c:                     0.1,
 		Rollout_capture:           0.0,
 		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
@@ -33,34 +33,37 @@ func main() {
 		Termination_parameter: 1000,
 		Gamma:                 0.95,
 		Epsilon:               0.05,
-		Ucb_c:                 5,
+		Ucb_c:                 0.1,
 		Rollout_capture:       0,
 		Opponent_modelling:    true,
 		OM_Threshold:          0.4,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{0.2, 0.4, 0.6, 0.8}
+	threshs := []float64{0.6}
 	for _, thresh := range threshs {
-		tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{
-			Search_depth: 4,
-			Epsilon:      thresh,
+		tune_settings.Rollout_selection = &player.CorrectiveSelection{
+			Bound:   thresh,
+			Epsilon: 0.05,
 		}
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
 			Last_move:       chess_variation.Move{},
-			Settings:        default_settings,
+			Settings:        tune_settings,
 		}
 		player2 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
 			Last_move:       chess_variation.Move{},
-			Settings:        tune_settings,
+			Settings:        default_settings,
 		}
-		iterations := 100
+		iterations := 66
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.DarkPawnChess{}
+			if i == 33 {
+				break
+			}
+			game := chess_variation.DarkChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2

@@ -223,7 +223,7 @@ func (dc *DarkChess) generate_moves(buffer []Move) int {
 				^own_occupancy) |
 				(own_pawns_capture[i] & opponent_occupancy)
 			n = dc.move_bitboard_to_moves(i, moves_possible, buffer, n, opponent_occupancy)
-			// pawns to in front
+			// pawns two in front
 			if dc.whiteToPlay {
 				if i < 16 && (1<<(i+8)&(dc.white_occupancy|dc.black_occupancy)) == 0 &&
 					(uint64(1)<<(i+16)&(dc.white_occupancy|dc.black_occupancy)) == 0 {
@@ -593,7 +593,7 @@ func (l *DarkChess) Create_fallback_particle(belief ChessVariation, white bool) 
 		view := l.GetView(white)
 		if white {
 			no_information := concrete_belief.black_occupancy & ^view
-			//copy.black_bishop |= no_information & concrete_belief.black_bishop
+			copy.black_bishop |= no_information & concrete_belief.black_bishop
 			copy.black_king |= no_information & concrete_belief.black_king
 			copy.black_knights |= no_information & concrete_belief.black_knights
 			copy.black_pawns |= no_information & concrete_belief.black_pawns
@@ -602,7 +602,7 @@ func (l *DarkChess) Create_fallback_particle(belief ChessVariation, white bool) 
 			// iterate over belief and copy and check if they are equal (after last move is executed in belief)
 		} else {
 			no_information := concrete_belief.white_occupancy & ^view
-			//copy.white_bishop |= no_information & concrete_belief.white_bishop
+			copy.white_bishop |= no_information & concrete_belief.white_bishop
 			copy.white_king |= no_information & concrete_belief.white_king
 			copy.white_knights |= no_information & concrete_belief.white_knights
 			copy.white_pawns |= no_information & concrete_belief.white_pawns
@@ -666,7 +666,7 @@ func (l *DarkChess) Hash() uint64 {
 		} else if l.white_king&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+int(King)]
 		} else if l.white_bishop&(1<<i) > 0 {
-			//hash ^= dc_zobrist_numbers[i*gap+int(Bishop)]
+			hash ^= dc_zobrist_numbers[i*gap+int(Bishop)]
 		} else if l.black_pawns&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types]
 		} else if l.black_rooks&(1<<i) > 0 {
@@ -678,7 +678,7 @@ func (l *DarkChess) Hash() uint64 {
 		} else if l.black_king&(1<<i) > 0 {
 			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(King)]
 		} else if l.black_bishop&(1<<i) > 0 {
-			//hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Bishop)]
+			hash ^= dc_zobrist_numbers[i*gap+no_of_piece_types+int(Bishop)]
 		}
 	}
 	return hash
