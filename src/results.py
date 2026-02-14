@@ -11,7 +11,11 @@ files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.cs
          "results/dpc_evaluation_cut_off.csv",
          "results/dpc_greedy.csv", "results/dpc_ic.csv", "results/dpc_ir.csv",
          "results/dpc_k_best.csv", "results/dpc_rollout_capture.csv",
-         "results/LAC_UCT.csv", "results/LAC_OM.csv"]
+         "results/LAC_UCT.csv", "results/LAC_OM.csv", "results/LAC_CAPTURE_PREF.csv",
+         "results/LAC_CORRECTIVE.csv", "results/LAC_EPT.csv",
+         "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_GREEDY.csv",
+         "results/LAC_IC.csv", "results/LAC_IR.csv", "results/LAC_K_BEST.csv"
+         ]
     
 def main():
     for file in files:

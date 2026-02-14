@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var name = "LAC_EVALUATION_CUT_OFF"
+var name = "DPC_IR"
 
 func main() {
 	// web_server()
@@ -42,8 +42,9 @@ func main() {
 	pomcp_wins := 0
 	threshs := []float64{0.2, 0.4, 0.6, 0.8}
 	for _, thresh := range threshs {
-		tune_settings.Early_playout_termination = &player.EvaluationCutOff{
-			Threshold: thresh,
+		tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{
+			Search_depth: 4,
+			Epsilon:      thresh,
 		}
 		player1 = &player.POMCP{
 			Root:            nil,
@@ -59,7 +60,7 @@ func main() {
 		}
 		iterations := 100
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.LosAlamosChess{}
+			game := chess_variation.DarkPawnChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2
