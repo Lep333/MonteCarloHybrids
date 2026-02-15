@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const NODE_MAX = 50000
+const NODE_MAX = 200000
 const BELIEFS_MAX = 10000
 
 type POMCP struct {
@@ -21,7 +21,8 @@ type POMCP struct {
 	Nodes           [NODE_MAX]Node
 	node_count      uint
 	beliefs         *Belief
-	child_pool      [NODE_MAX][1000]*Node
+	child_pool      [NODE_MAX][200]*Node
+	stack           []uint
 }
 
 type Combined_Key struct {
@@ -47,7 +48,7 @@ type Settings struct {
 
 type Node struct {
 	parent      *Node
-	children    *[1000]*Node
+	children    *[200]*Node
 	value       float64    // v
 	visits      int        // n
 	observation uint64     // o
@@ -227,7 +228,7 @@ func (p *POMCP) search(h *Node) chess.Move {
 }
 
 func (p *POMCP) simulate(s chess.ChessVariation, h *Node, depth int, current_gamma float64) float64 {
-	if current_gamma < p.Settings.Epsilon || depth > 100 {
+	if depth > 100 {
 		return 0
 	}
 
@@ -292,7 +293,7 @@ func (p *POMCP) create_node(h *Node, a chess.Move, o uint64) *Node {
 	ha.visits = 0
 	ha.value = 0
 	ha.free = false
-	if h.child_count < 1000 {
+	if h.child_count < 200 {
 		h.children[h.child_count] = ha
 		h.child_count++
 	}
@@ -314,7 +315,7 @@ func (p *POMCP) get_children(n *Node, a chess.Move, o uint64) *Node {
 }
 
 func (p *POMCP) rollout(s chess.ChessVariation, depth int, current_gamma float64) float64 {
-	if current_gamma < p.Settings.Epsilon || depth > 100 {
+	if depth > 100 {
 		return 0
 	}
 	// early playout termination?

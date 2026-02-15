@@ -9,8 +9,9 @@ from scipy.stats import binomtest
 csv = []
 files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.csv","results/dpc_evaluation_cut_off.csv",
          "results/dpc_evaluation_cut_off.csv",
-         "results/dpc_greedy.csv", "results/dpc_ic.csv", "results/dpc_ir.csv",
+         "results/dpc_greedy.csv", "results/dpc_ic.csv",
          "results/dpc_k_best.csv", "results/dpc_rollout_capture.csv",
+         "results/DPC_IR.csv",
          "results/LAC_UCT.csv", "results/LAC_OM.csv", "results/LAC_CAPTURE_PREF.csv",
          "results/LAC_CORRECTIVE.csv", "results/LAC_EPT.csv",
          "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_GREEDY.csv",
@@ -18,7 +19,9 @@ files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.cs
          "results/LAC_UCT.csv", "results/LAC_OM.csv", "results/LAC_GREEDY.csv",
          "results/LAC_CAPTURE_PREF.csv", "results/LAC_CORRECTIVE.csv", "results/LAC_EPT.csv",
          "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_K_BEST.csv",  
-         "results/DC_UCT.csv", "results/DC_OM.csv"]
+         "results/DC_UCT.csv", "results/DC_OM.csv", "results/DC_GREEDY.csv",
+         "results/DC_EPT_2.csv", "results/DC_CORRECTIVE.csv", "results/DC_ROLLOUT_CAPTURE.csv",
+         "results/DC_EVAL_CUT_OFF_2.csv"]
     
 def main():
     for file in files:
@@ -146,18 +149,18 @@ def print_hybrids(result_dict: dict[list]):
             "DPC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
             "Frühzeitige-Abbrüche",
-            "Abbruchstiefe"
+            "Abbruchtiefe"
         ),
         (
             "DPC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "Evaluation-Cut-Off",
-            "Abbruchsschwellwert"
+            "Abbruchschwellwert"
         ),
         (
             "DPC_ROLLOUT_PREF",
             [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
-            "Schlagpräfarenz",
+            "Schlagpräferenz",
             "Schlagwahrscheinlichkeit"
         ),
         (
@@ -173,7 +176,7 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
             ],
             "Vielversprechende Abbrüche",
-            ["Suchtiefe", "Abbruchstiefe"]
+            ["Suchtiefe", "Abbruchtiefe"]
         ),
         (
             "LAC_UCT",
@@ -200,6 +203,36 @@ def print_hybrids(result_dict: dict[list]):
             "c"
         ),
         (
+            "DC_GREEDY",
+            [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
+            "Greedy-Hybrid",
+            "Abbruchtiefe"
+        ),
+        (
+            "DC_CORRECTIVE",
+            [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
+            "Frühzeitige-Abbrüche",
+            "Abbruchtiefe"
+        ),
+        (
+            "DC_ROLLOUT_CAPTURE",
+            [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
+            "Schlagpräfarenz",
+            "Schlagwahrscheinlichkeit"
+        ),
+        (
+            "DC_EPT_2",
+            [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
+            "Early-Playout-Termination",
+            "Abbruchtiefe"
+        ),
+        (
+            "DC_EVAL_CUT_OFF_2",
+            [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
+            "Evaluation-Cut-Off-Hybrid",
+            "Abbruchschwellwert"
+        ),
+        (
             "LAC_GREEDY",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Greedy-Hybrid",
@@ -209,7 +242,7 @@ def print_hybrids(result_dict: dict[list]):
             "LAC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
             "Early-Playout-Termination",
-            "Abbruchstiefe"
+            "Abbruchtiefe"
         ),
         (
             "LAC_CAPTURE_PREF",
@@ -219,7 +252,7 @@ def print_hybrids(result_dict: dict[list]):
         ),
         (
             "LAC_CORRECTIVE",
-            [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
+            [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur",
             "Schwellwert Zug zu wählen"
         ),
@@ -227,7 +260,7 @@ def print_hybrids(result_dict: dict[list]):
             "LAC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "Evaluation-Cut-Off-Hybrid",
-            "Abbruchsschwellwert"
+            "Abbruchschwellwert"
         ),
         (
             "LAC_K_BEST",
@@ -242,7 +275,7 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
             ],
             "Vielversprechende Abbrüche",
-            ["Suchtiefe", "Abbruchstiefe"]
+            ["Suchtiefe", "Abbruchtiefe"]
         ),
         (
             "LAC_IR",
@@ -260,7 +293,7 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
              ],
             "Vielversprechende Rollouts",
-            ["Suchtiefe", "Abbruchstiefe"]
+            ["Suchtiefe", "Abbruchtiefe"]
         ),
     ]
 
@@ -355,7 +388,7 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
     fig, ax = plt.subplots()
     groups = sorted(x.keys())
     n_groups = len(groups)
-    width = 0.15  # total horizontal spread
+    width = 0.02  # total horizontal spread
     offsets = np.linspace(-width, width, n_groups)
     for offset, param1 in zip(offsets, groups):
         #x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))
@@ -373,7 +406,7 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
     unique_x = sorted({v for vals in x.values() for v in vals})
     ax.set_xticks(unique_x)
     fig.tight_layout()
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), 
+    plt.legend(title=x_axis_label[1],loc='upper center', bbox_to_anchor=(0.5, -0.3), 
         ncol=2, fontsize=8)
     plt.savefig(f"{name}.pdf", format="pdf", bbox_inches="tight")
     plt.close()

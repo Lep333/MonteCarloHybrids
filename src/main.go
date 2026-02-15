@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var name = "DC_CORRECTIVE"
+var name = "DC_EPT_2"
 
 func main() {
 	// web_server()
@@ -27,7 +27,7 @@ func main() {
 		Early_playout_termination: nil,
 		POMCP_name:                name,
 		Opponent_modelling:        true,
-		OM_Threshold:              0.4,
+		OM_Threshold:              0.2,
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
@@ -36,33 +36,29 @@ func main() {
 		Ucb_c:                 0.1,
 		Rollout_capture:       0,
 		Opponent_modelling:    true,
-		OM_Threshold:          0.4,
+		OM_Threshold:          0.2,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{0.6}
+	threshs := []float64{10, 20, 30, 40}
 	for _, thresh := range threshs {
-		tune_settings.Rollout_selection = &player.CorrectiveSelection{
-			Bound:   thresh,
-			Epsilon: 0.05,
+		tune_settings.Early_playout_termination = &player.EarlyPlayoutTerminationStruct{
+			Max_depth: thresh,
 		}
 		player1 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
 			Last_move:       chess_variation.Move{},
-			Settings:        tune_settings,
+			Settings:        default_settings,
 		}
 		player2 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
 			Last_move:       chess_variation.Move{},
-			Settings:        default_settings,
+			Settings:        tune_settings,
 		}
-		iterations := 66
+		iterations := 100
 		for i := 0; i < iterations; i++ {
-			if i == 33 {
-				break
-			}
 			game := chess_variation.DarkChess{}
 			if i == int(iterations/2) {
 				temp := player1
