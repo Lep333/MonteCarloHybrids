@@ -22,16 +22,12 @@ files = [
          "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_K_BEST.csv",  
          "results/DC_UCT.csv", "results/DC_OM.csv", "results/DC_GREEDY.csv",
          "results/DC_EPT_2.csv", "results/DC_CORRECTIVE.csv", "results/DC_ROLLOUT_CAPTURE.csv",
-<<<<<<< HEAD
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_K_BEST.csv",
          "results/LAC_IC_3.csv"
-         ]
-=======
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_CORRECTIVE_2.csv", "results/DC_GREEDY_2.csv",
          "results/DC_CAPTURE_PREF_2.csv", "results/DC_EPT_2.csv",
          "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv"
         ]
->>>>>>> 5f07d2b (data sava.)
     
 def main():
     for file in files:
