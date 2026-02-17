@@ -58,7 +58,7 @@ func main() {
 			Last_move:       chess_variation.Move{},
 			Settings:        tune_settings,
 		}
-		iterations := 100
+		iterations := 50
 		for i := 0; i < iterations; i++ {
 			game := chess_variation.LosAlamosChess{}
 			if i == int(iterations/2) {

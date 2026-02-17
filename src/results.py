@@ -7,7 +7,8 @@ import matplotlib as mpl
 from scipy.stats import binomtest
 
 csv = []
-files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.csv","results/dpc_evaluation_cut_off.csv",
+files = [
+         "results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.csv","results/dpc_evaluation_cut_off.csv",
          "results/dpc_evaluation_cut_off.csv",
          "results/dpc_greedy.csv", "results/dpc_ic.csv",
          "results/dpc_k_best.csv", "results/dpc_rollout_capture.csv",
@@ -15,15 +16,22 @@ files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.cs
          "results/LAC_UCT.csv", "results/LAC_OM.csv", "results/LAC_CAPTURE_PREF.csv",
          "results/LAC_CORRECTIVE.csv", "results/LAC_EPT.csv",
          "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_GREEDY.csv",
-         "results/LAC_IC.csv", "results/LAC_IR.csv", "results/LAC_K_BEST.csv",
+         "results/LAC_IC_2.csv", "results/LAC_IR.csv", "results/LAC_K_BEST.csv",
          "results/LAC_UCT.csv", "results/LAC_OM.csv", "results/LAC_GREEDY.csv",
          "results/LAC_CAPTURE_PREF.csv", "results/LAC_CORRECTIVE.csv", "results/LAC_EPT.csv",
          "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_K_BEST.csv",  
          "results/DC_UCT.csv", "results/DC_OM.csv", "results/DC_GREEDY.csv",
          "results/DC_EPT_2.csv", "results/DC_CORRECTIVE.csv", "results/DC_ROLLOUT_CAPTURE.csv",
+<<<<<<< HEAD
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_K_BEST.csv",
          "results/LAC_IC_3.csv"
          ]
+=======
+         "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_CORRECTIVE_2.csv", "results/DC_GREEDY_2.csv",
+         "results/DC_CAPTURE_PREF_2.csv", "results/DC_EPT_2.csv",
+         "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv"
+        ]
+>>>>>>> 5f07d2b (data sava.)
     
 def main():
     for file in files:
@@ -139,7 +147,7 @@ def print_hybrids(result_dict: dict[list]):
             "DPC_CORRECTIVE",
             [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur",
-            "Schwellwert Zug zu wählen"
+            "Schwellwert"
         ),
         (
             "DPC_GREEDY",
@@ -150,13 +158,13 @@ def print_hybrids(result_dict: dict[list]):
         (
             "DPC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Frühzeitige-Abbrüche",
+            "Frühzeitiger-Abbruch",
             "Abbruchtiefe"
         ),
         (
             "DPC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Evaluation-Cut-Off",
+            "Bewertungs-Abbruch",
             "Abbruchschwellwert"
         ),
         (
@@ -205,27 +213,27 @@ def print_hybrids(result_dict: dict[list]):
             "c"
         ),
         (
-            "DC_GREEDY",
+            "DC_GREEDY_2",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Greedy-Hybrid",
-            "Abbruchtiefe"
+            "Epsilon"
         ),
         (
-            "DC_CORRECTIVE",
-            [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Frühzeitige-Abbrüche",
-            "Abbruchtiefe"
+            "DC_CORRECTIVE_2",
+            [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
+            "Korrektur",
+            "Schwellwert"
         ),
         (
-            "DC_ROLLOUT_CAPTURE",
+            "DC_CAPTURE_PREF_2",
             [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
-            "Schlagpräfarenz",
+            "Schlagpräferenz",
             "Schlagwahrscheinlichkeit"
         ),
         (
             "DC_EPT_2",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Early-Playout-Termination",
+            "Frühzeitiger-Abbruch",
             "Abbruchtiefe"
         ),
         (
@@ -237,8 +245,24 @@ def print_hybrids(result_dict: dict[list]):
         (
             "DC_EVAL_CUT_OFF_2",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Evaluation-Cut-Off-Hybrid",
+            "Bewertungs-Abbruch",
             "Abbruchschwellwert"
+        ),
+        (
+            "DC_IR",
+            [
+                r'"Search_depth":\s*\d+.*?"Epsilon":\s*([\d.]+)',
+            ],
+            "Vielversprechender-Rollout",
+            "Abbruchschwellwert"
+        ),
+        (
+            "DC_IC",
+            [
+                r'"Max_depth":([0-9]+(?:\.[0-9]+)?)',
+            ],
+            "Vielversprechende-Abbrüche",
+            "Abbruchtiefe"
         ),
         (
             "LAC_GREEDY",
@@ -249,13 +273,13 @@ def print_hybrids(result_dict: dict[list]):
         (
             "LAC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Early-Playout-Termination",
+            "Frühzeitiger Abbruch",
             "Abbruchtiefe"
         ),
         (
             "LAC_CAPTURE_PREF",
             [r'\"Rollout_capture\":([0-9]+(?:\.[0-9]+)?)'],
-            "Schlagpräfarenz",
+            "Schlagpräferenz",
             "Schlagwahrscheinlichkeit"
         ),
         (
@@ -267,7 +291,7 @@ def print_hybrids(result_dict: dict[list]):
         (
             "LAC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Evaluation-Cut-Off-Hybrid",
+            "Bewertungs-Abbruch",
             "Abbruchschwellwert"
         ),
         (
