@@ -26,7 +26,11 @@ files = [
          "results/LAC_IC_3.csv"
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_CORRECTIVE_2.csv", "results/DC_GREEDY_2.csv",
          "results/DC_CAPTURE_PREF_2.csv", "results/DC_EPT_2.csv",
-         "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv"
+         "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv", "results/DPC_GREEDY_VS_BASELINE.csv",
+         "results/DPC_GREEDY_VS_BASELINE_OM.csv", "results/DPC_GREEDY_VS_EVAL_CUT_OFF.csv",
+         "results/DPC_GREEDY_VS_EVAL_CUT_OFF_OM.csv", "results/LAC_BASE_VS_GREEDY.csv",
+         "results/LAC_EVAL_VS_GREEDY.csv", "results/DC_BASELINE_VS_GREEDY.csv",
+         "results/DC_IR_VS_GREEDY.csv"
         ]
     
 def main():
@@ -55,16 +59,29 @@ def main():
             white = [0,1,0]
             black = [0,1,0]
 
+        # rollout_per_second = []
+        # for i, no in enumerate(no_rollouts):
+        #     if i%2==1:
+        #         continue
+        #     rollout_per_second.append(no)
+
         if result_dict.get(settings1):
             result_dict[settings1] = ([
                 result_dict[settings1][0][0]+white[0], 
                 result_dict[settings1][0][1]+white[1],
                 result_dict[settings1][0][2]+white[2]
                 ],
-                result_dict[settings1][1])
+                result_dict[settings1][1],
+                #rollout_per_second
+                )
         else:
             result_dict[settings1] = (white,[0,0,0])
         
+        # rollout_per_second = []
+        # for i, no in enumerate(no_rollouts):
+        #     if i%2==0:
+        #         continue
+        #     rollout_per_second.append(no)
         if result_dict.get(settings2):
             result_dict[settings2] = (
                 result_dict[settings2][0],
@@ -72,7 +89,8 @@ def main():
                     result_dict[settings2][1][0]+black[0],
                     result_dict[settings2][1][1]+black[1],
                     result_dict[settings2][1][2]+black[2],
-                ]
+                ],
+                #rollout_per_second
                 )
         else:
             result_dict[settings2] = ([0,0,0],black)
@@ -143,25 +161,25 @@ def print_hybrids(result_dict: dict[list]):
             "DPC_CORRECTIVE",
             [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur",
-            "Schwellwert"
+            "Bewertungsschwellwert für sofortige Zugwahl"
         ),
         (
             "DPC_GREEDY",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
-            "Greedy-Hybrid",
-            "Epsilon"
+            "Greedy",
+            "Wahrscheinlichkeit für beste Zugwahl"
         ),
         (
             "DPC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Frühzeitiger-Abbruch",
-            "Abbruchtiefe"
+            "Frühzeitiger Abbruch",
+            "Rollout-Tiefe"
         ),
         (
             "DPC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Bewertungs-Abbruch",
-            "Abbruchschwellwert"
+            "Bewertungsabbrüche",
+            "Bewertungsschwellwert für sofortigen Abbruch"
         ),
         (
             "DPC_ROLLOUT_PREF",
@@ -173,7 +191,55 @@ def print_hybrids(result_dict: dict[list]):
             "DPC_K_BEST",
             [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
             "K-Beste",
+            "Anzahl berücksichtigter Züge"
+        ),
+        (
+            "DPC_GREEDY_VS_BASELINE",
+            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+            "K-Beste",
             "k"
+        ),
+        (
+            "DPC_GREEDY_VS_BASELINE_OM",
+            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+            "K-Beste",
+            "k"
+        ),
+        (
+            "DPC_GREEDY_VS_EVAL_CUT_OFF",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "DPC_GREEDY_VS_EVAL_CUT_OFF_OM",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "LAC_BASE_VS_GREEDY",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "LAC_EVAL_VS_GREEDY",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "DC_IR_VS_GREEDY",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
+        ),
+        (
+            "DC_BASELINE_VS_GREEDY",
+            [r'\"Ucb_c\":([0-9]+(?:\.[0-9]+)?)'],
+            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "c"
         ),
         (
             "DPC_IC",
@@ -182,7 +248,16 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
             ],
             "Vielversprechende Abbrüche",
-            ["Suchtiefe", "Abbruchtiefe"]
+            ["Minimax-Suchtiefe", "Rollout-Tiefe"]
+        ),
+        (
+            "DPC_IR",
+            [
+                r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+             ],
+            "Vielversprechende Rollouts",
+            ["Wahrscheinlichkeit für Minimax-Suche", "Minimax-Suchtiefe"]
         ),
         (
             "LAC_UCT",
@@ -211,14 +286,14 @@ def print_hybrids(result_dict: dict[list]):
         (
             "DC_GREEDY_2",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
-            "Greedy-Hybrid",
-            "Epsilon"
+            "Greedy",
+            "Wahrscheinlichkeit für beste Zugwahl"
         ),
         (
             "DC_CORRECTIVE_2",
             [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur",
-            "Schwellwert"
+            "Bewertungsschwellwert für sofortige Auswahl"
         ),
         (
             "DC_CAPTURE_PREF_2",
@@ -229,8 +304,8 @@ def print_hybrids(result_dict: dict[list]):
         (
             "DC_EPT_2",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Frühzeitiger-Abbruch",
-            "Abbruchtiefe"
+            "Frühzeitige Abbrüche",
+            "Rollout-Tiefe"
         ),
         (
             "DC_K_BEST",
@@ -241,36 +316,42 @@ def print_hybrids(result_dict: dict[list]):
         (
             "DC_EVAL_CUT_OFF_2",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Bewertungs-Abbruch",
-            "Abbruchschwellwert"
+            "Bewertungsabbrüche",
+            "Bewertungsschwellwert für sofortigen Abbruch"
         ),
         (
             "DC_IR",
             [
                 r'"Search_depth":\s*\d+.*?"Epsilon":\s*([\d.]+)',
             ],
-            "Vielversprechender-Rollout",
-            "Abbruchschwellwert"
+            "Vielversprechende Rollouts",
+            "Wahrscheinlichkeit für Minimax-Suche"
         ),
         (
             "DC_IC",
             [
                 r'"Max_depth":([0-9]+(?:\.[0-9]+)?)',
             ],
-            "Vielversprechende-Abbrüche",
-            "Abbruchtiefe"
+            "Vielversprechende Abbrüche",
+            "Rollout-Tiefe"
+        ),
+        (
+            "DC_K_BEST",
+            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+            "K-Beste",
+            "Anzahl berücksichtigter Züge"
         ),
         (
             "LAC_GREEDY",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
-            "Greedy-Hybrid",
-            "Epsilon"
+            "Greedy",
+            "Wahrscheinlichkeit für beste Zugwahl"
         ),
         (
             "LAC_EPT",
             [r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)'],
-            "Frühzeitiger Abbruch",
-            "Abbruchtiefe"
+            "Frühzeitige Abbrüche",
+            "Rollout-Tiefe"
         ),
         (
             "LAC_CAPTURE_PREF",
@@ -282,19 +363,19 @@ def print_hybrids(result_dict: dict[list]):
             "LAC_CORRECTIVE",
             [r'\"Rollout_selection\":\{\"Bound\":([0-9]+(?:\.[0-9]+)?)'],
             "Korrektur",
-            "Schwellwert Zug zu wählen"
+            "Bewertungsschwellwert für sofortige Zugwahl"
         ),
         (
             "LAC_EVALUATION_CUT_OFF",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "Bewertungs-Abbruch",
-            "Abbruchschwellwert"
+            "Bewertungsabbrüche",
+            "Bewertungsschwellwert für sofortigen Abbruch"
         ),
         (
             "LAC_K_BEST",
             [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
             "K-Beste",
-            "k"
+            "Anzahl berücksichtigter Züge"
         ),
         (
             "LAC_IC",
@@ -303,7 +384,7 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
             ],
             "Vielversprechende Abbrüche",
-            ["Suchtiefe", "Abbruchtiefe"]
+            ["Minimax-Suchtiefe", "Rollout-Tiefe"]
         ),
         (
             "LAC_IC_3",
@@ -321,16 +402,7 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
              ],
             "Vielversprechende Rollouts",
-            ["Epsilon", "Suchtiefe"]
-        ),
-        (
-            "DPC_IR",
-            [
-                r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
-                r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
-             ],
-            "Vielversprechende Rollouts",
-            ["Suchtiefe", "Abbruchtiefe"]
+            ["Wahrschinlichkeit für Minimax-Suche", "Minimax-Suchtiefe"]
         ),
     ]
 
@@ -388,7 +460,7 @@ def print_hybrids(result_dict: dict[list]):
             'xtick.labelsize': 8,
             'ytick.labelsize': 8,
             'legend.fontsize': 8,
-            'figure.figsize': (3.2, 2.5) # WICHTIG: Kleine Fläche erzwingt große Schrift
+            'figure.figsize': (3.51, 2.5) # WICHTIG: Kleine Fläche erzwingt große Schrift
         })
         plt.savefig(f"{name}.pdf", format="pdf", bbox_inches="tight")
         plt.close()
@@ -425,7 +497,9 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
     fig, ax = plt.subplots()
     groups = sorted(x.keys())
     n_groups = len(groups)
-    width = 0.02  # total horizontal spread
+    # dpc ir = 0.04 dpc ic = 0.15
+    # lac ir = 0.012
+    width = 0.012  # total horizontal spread
     offsets = np.linspace(-width, width, n_groups)
     for offset, param1 in zip(offsets, groups):
         #x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))

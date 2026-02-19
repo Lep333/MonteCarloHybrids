@@ -10,7 +10,11 @@ import (
 	"strings"
 )
 
+<<<<<<< HEAD
 var name = "LAC_IR_2"
+=======
+var name = "DC_IC_2"
+>>>>>>> f22893a (Added data.)
 
 func main() {
 	// web_server()
@@ -40,11 +44,19 @@ func main() {
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
+<<<<<<< HEAD
 	threshs := []float64{1}
 	for _, thresh := range threshs {
 		tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{
 			Epsilon:      thresh,
 			Search_depth: 1,
+=======
+	threshs := []float64{6}
+	for _, thresh := range threshs {
+		tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
+			Search_depth: 2,
+			Max_depth:    thresh,
+>>>>>>> f22893a (Added data.)
 		}
 		player1 = &player.POMCP{
 			Root:            nil,
@@ -58,7 +70,7 @@ func main() {
 			Last_move:       chess_variation.Move{},
 			Settings:        tune_settings,
 		}
-		iterations := 50
+		iterations := 100
 		for i := 0; i < iterations; i++ {
 			game := chess_variation.LosAlamosChess{}
 			if i == int(iterations/2) {
