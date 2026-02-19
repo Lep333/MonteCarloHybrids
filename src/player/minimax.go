@@ -16,7 +16,7 @@ func Minimax(s chess_variation.ChessVariation,
 	}
 	if depth == depth_limit {
 		empty_move := chess_variation.Move{}
-		return empty_move, s.Heuristic(!white)
+		return empty_move, s.Heuristic(white)
 	}
 	if game_over {
 		empty_move := chess_variation.Move{}

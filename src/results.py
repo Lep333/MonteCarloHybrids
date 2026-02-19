@@ -21,7 +21,9 @@ files = ["results/dpc_uct.csv", "results/dpc_corrective.csv","results/dpc_ept.cs
          "results/LAC_EVALUATION_CUT_OFF.csv", "results/LAC_K_BEST.csv",  
          "results/DC_UCT.csv", "results/DC_OM.csv", "results/DC_GREEDY.csv",
          "results/DC_EPT_2.csv", "results/DC_CORRECTIVE.csv", "results/DC_ROLLOUT_CAPTURE.csv",
-         "results/DC_EVAL_CUT_OFF_2.csv"]
+         "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_K_BEST.csv",
+         "results/LAC_IC_3.csv"
+         ]
     
 def main():
     for file in files:
@@ -227,6 +229,12 @@ def print_hybrids(result_dict: dict[list]):
             "Abbruchtiefe"
         ),
         (
+            "DC_K_BEST",
+            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+            "K-Beste",
+            "k"
+        ),
+        (
             "DC_EVAL_CUT_OFF_2",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
             "Evaluation-Cut-Off-Hybrid",
@@ -270,6 +278,15 @@ def print_hybrids(result_dict: dict[list]):
         ),
         (
             "LAC_IC",
+            [
+                r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+            ],
+            "Vielversprechende Abbrüche",
+            ["Suchtiefe", "Abbruchtiefe"]
+        ),
+        (
+            "LAC_IC_3",
             [
                 r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
