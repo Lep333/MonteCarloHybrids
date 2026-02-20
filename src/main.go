@@ -11,10 +11,14 @@ import (
 )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 var name = "LAC_IR_2"
 =======
 var name = "DC_IC_2"
 >>>>>>> f22893a (Added data.)
+=======
+var name = "DC_IR_2"
+>>>>>>> 5a892c5 (data sava.)
 
 func main() {
 	// web_server()
@@ -23,7 +27,7 @@ func main() {
 		Termination_parameter:     1000,
 		Gamma:                     0.95,
 		Epsilon:                   0.05,
-		Ucb_c:                     5,
+		Ucb_c:                     0.1,
 		Rollout_capture:           0.0,
 		Prior_hybrid:              nil,
 		Selection_hybrid:          nil,
@@ -31,19 +35,20 @@ func main() {
 		Early_playout_termination: nil,
 		POMCP_name:                name,
 		Opponent_modelling:        true,
-		OM_Threshold:              0.4,
+		OM_Threshold:              0.2,
 	}
 	default_settings := player.Settings{
 		Termination_parameter: 1000,
 		Gamma:                 0.95,
 		Epsilon:               0.05,
-		Ucb_c:                 5,
+		Ucb_c:                 0.1,
 		Rollout_capture:       0,
 		Opponent_modelling:    true,
-		OM_Threshold:          0.4,
+		OM_Threshold:          0.2,
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
+<<<<<<< HEAD
 <<<<<<< HEAD
 	threshs := []float64{1}
 	for _, thresh := range threshs {
@@ -52,11 +57,18 @@ func main() {
 			Search_depth: 1,
 =======
 	threshs := []float64{6}
+=======
+	threshs := []float64{1}
+>>>>>>> 5a892c5 (data sava.)
 	for _, thresh := range threshs {
-		tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
+		tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{
 			Search_depth: 2,
+<<<<<<< HEAD
 			Max_depth:    thresh,
 >>>>>>> f22893a (Added data.)
+=======
+			Epsilon:      thresh,
+>>>>>>> 5a892c5 (data sava.)
 		}
 		player1 = &player.POMCP{
 			Root:            nil,
@@ -72,7 +84,7 @@ func main() {
 		}
 		iterations := 100
 		for i := 0; i < iterations; i++ {
-			game := chess_variation.LosAlamosChess{}
+			game := chess_variation.DarkChess{}
 			if i == int(iterations/2) {
 				temp := player1
 				player1 = player2

@@ -23,14 +23,21 @@ files = [
          "results/DC_UCT.csv", "results/DC_OM.csv", "results/DC_GREEDY.csv",
          "results/DC_EPT_2.csv", "results/DC_CORRECTIVE.csv", "results/DC_ROLLOUT_CAPTURE.csv",
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_K_BEST.csv",
+<<<<<<< HEAD
          "results/LAC_IC_3.csv"
+=======
+         "results/LAC_IC_3.csv",
+         "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_CORRECTIVE_2.csv", "results/DC_GREEDY_2.csv",
+         "results/DC_CAPTURE_PREF_2.csv", "results/DC_EPT_2.csv",
+         "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv",
+>>>>>>> 5a892c5 (data sava.)
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_CORRECTIVE_2.csv", "results/DC_GREEDY_2.csv",
          "results/DC_CAPTURE_PREF_2.csv", "results/DC_EPT_2.csv",
          "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv", "results/DPC_GREEDY_VS_BASELINE.csv",
          "results/DPC_GREEDY_VS_BASELINE_OM.csv", "results/DPC_GREEDY_VS_EVAL_CUT_OFF.csv",
          "results/DPC_GREEDY_VS_EVAL_CUT_OFF_OM.csv", "results/LAC_BASE_VS_GREEDY.csv",
          "results/LAC_EVAL_VS_GREEDY.csv", "results/DC_BASELINE_VS_GREEDY.csv",
-         "results/DC_IR_VS_GREEDY.csv"
+         "results/DC_IR_VS_GREEDY.csv", "results/DC_IC_2.csv", "results/DC_IR_2.csv"
         ]
     
 def main():
@@ -307,12 +314,12 @@ def print_hybrids(result_dict: dict[list]):
             "Frühzeitige Abbrüche",
             "Rollout-Tiefe"
         ),
-        (
-            "DC_K_BEST",
-            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
-            "K-Beste",
-            "k"
-        ),
+        # (
+        #     "DC_K_BEST",
+        #     [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+        #     "K-Beste",
+        #     "k"
+        # ),
         (
             "DC_EVAL_CUT_OFF_2",
             [r'\"Early_playout_termination\":\{\"Threshold\":([0-9]+(?:\.[0-9]+)?)'],
@@ -336,12 +343,47 @@ def print_hybrids(result_dict: dict[list]):
             "Rollout-Tiefe"
         ),
         (
-            "DC_K_BEST",
-            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
-            "K-Beste",
-            "Anzahl berücksichtigter Züge"
+            "DC_IC_2",
+            [
+                r'"Max_depth":([0-9]+(?:\.[0-9]+)?)',
+            ],
+            "Vielversprechende Abbrüche",
+            "Rollout-Tiefe"
+        ),
+        # (
+        #     "DC_K_BEST",
+        #     [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+        #     "K-Beste",
+        #     "Anzahl berücksichtigter Züge"
+        # ),
+        (
+<<<<<<< HEAD
+=======
+            "DC_IR",
+            [
+                r'"Search_depth":\s*\d+.*?"Epsilon":\s*([\d.]+)',
+            ],
+            "Vielversprechender-Rollout",
+            "Abbruchschwellwert"
         ),
         (
+            "DC_IR_2",
+            [
+                r'"Search_depth":\s*\d+.*?"Epsilon":\s*([\d.]+)',
+            ],
+            "Vielversprechender-Rollout",
+            "Abbruchschwellwert"
+        ),
+        (
+            "DC_IC",
+            [
+                r'"Max_depth":([0-9]+(?:\.[0-9]+)?)',
+            ],
+            "Vielversprechende-Abbrüche",
+            "Abbruchtiefe"
+        ),
+        (
+>>>>>>> 5a892c5 (data sava.)
             "LAC_GREEDY",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Greedy",
@@ -386,6 +428,7 @@ def print_hybrids(result_dict: dict[list]):
             "Vielversprechende Abbrüche",
             ["Minimax-Suchtiefe", "Rollout-Tiefe"]
         ),
+        
         (
             "LAC_IC_3",
             [
@@ -393,7 +436,7 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
             ],
             "Vielversprechende Abbrüche",
-            ["Suchtiefe", "Abbruchtiefe"]
+            ["Minimax-Suchtiefe", "Rollout-Tiefe"]
         ),
         (
             "LAC_IR",
@@ -499,7 +542,7 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
     n_groups = len(groups)
     # dpc ir = 0.04 dpc ic = 0.15
     # lac ir = 0.012
-    width = 0.012  # total horizontal spread
+    width = 0.25  # total horizontal spread
     offsets = np.linspace(-width, width, n_groups)
     for offset, param1 in zip(offsets, groups):
         #x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))
