@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var name = "LAC_IC_3"
+var name = "LAC_IR_2"
 
 func main() {
 	// web_server()
@@ -40,11 +40,11 @@ func main() {
 	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{40}
+	threshs := []float64{1}
 	for _, thresh := range threshs {
-		tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
-			Max_depth:    thresh,
-			Search_depth: 4,
+		tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{
+			Epsilon:      thresh,
+			Search_depth: 1,
 		}
 		player1 = &player.POMCP{
 			Root:            nil,
