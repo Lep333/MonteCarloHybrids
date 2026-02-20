@@ -10,15 +10,7 @@ import (
 	"strings"
 )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-var name = "LAC_IR_2"
-=======
-var name = "DC_IC_2"
->>>>>>> f22893a (Added data.)
-=======
-var name = "DC_IR_2"
->>>>>>> 5a892c5 (data sava.)
+var name = "DC_IC_VS_GREEDY"
 
 func main() {
 	// web_server()
@@ -37,52 +29,31 @@ func main() {
 		Opponent_modelling:        true,
 		OM_Threshold:              0.2,
 	}
-	default_settings := player.Settings{
-		Termination_parameter: 1000,
-		Gamma:                 0.95,
-		Epsilon:               0.05,
-		Ucb_c:                 0.1,
-		Rollout_capture:       0,
-		Opponent_modelling:    true,
-		OM_Threshold:          0.2,
-	}
+	// default_settings := player.Settings{
+	// 	Termination_parameter: 1000,
+	// 	Gamma:                 0.95,
+	// 	Epsilon:               0.05,
+	// 	Ucb_c:                 0.1,
+	// 	Rollout_capture:       0,
+	// 	Opponent_modelling:    true,
+	// 	OM_Threshold:          0.2,
+	// }
 	greedy_wins := 0
 	pomcp_wins := 0
-<<<<<<< HEAD
-<<<<<<< HEAD
-	threshs := []float64{1}
-	for _, thresh := range threshs {
-		tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{
-			Epsilon:      thresh,
-			Search_depth: 1,
-=======
 	threshs := []float64{6}
-=======
-	threshs := []float64{1}
->>>>>>> 5a892c5 (data sava.)
 	for _, thresh := range threshs {
-		tune_settings.Rollout_selection = &player.MCTS_with_informed_rollouts{
-			Search_depth: 2,
-<<<<<<< HEAD
+		tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
 			Max_depth:    thresh,
->>>>>>> f22893a (Added data.)
-=======
-			Epsilon:      thresh,
->>>>>>> 5a892c5 (data sava.)
+			Search_depth: 2,
 		}
-		player1 = &player.POMCP{
-			Root:            nil,
-			Started_playing: false,
-			Last_move:       chess_variation.Move{},
-			Settings:        default_settings,
-		}
+		player1 = &player.Greedy{}
 		player2 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
 			Last_move:       chess_variation.Move{},
 			Settings:        tune_settings,
 		}
-		iterations := 100
+		iterations := 25
 		for i := 0; i < iterations; i++ {
 			game := chess_variation.DarkChess{}
 			if i == int(iterations/2) {

@@ -1,3 +1,4 @@
+import statistics
 import re
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,21 +24,18 @@ files = [
          "results/DC_UCT.csv", "results/DC_OM.csv", "results/DC_GREEDY.csv",
          "results/DC_EPT_2.csv", "results/DC_CORRECTIVE.csv", "results/DC_ROLLOUT_CAPTURE.csv",
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_K_BEST.csv",
-<<<<<<< HEAD
-         "results/LAC_IC_3.csv"
-=======
          "results/LAC_IC_3.csv",
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_CORRECTIVE_2.csv", "results/DC_GREEDY_2.csv",
          "results/DC_CAPTURE_PREF_2.csv", "results/DC_EPT_2.csv",
          "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv",
->>>>>>> 5a892c5 (data sava.)
          "results/DC_EVAL_CUT_OFF_2.csv", "results/DC_CORRECTIVE_2.csv", "results/DC_GREEDY_2.csv",
          "results/DC_CAPTURE_PREF_2.csv", "results/DC_EPT_2.csv",
          "results/DC_K_BEST.csv", "results/DC_IR.csv", "results/DC_IC.csv", "results/DPC_GREEDY_VS_BASELINE.csv",
          "results/DPC_GREEDY_VS_BASELINE_OM.csv", "results/DPC_GREEDY_VS_EVAL_CUT_OFF.csv",
          "results/DPC_GREEDY_VS_EVAL_CUT_OFF_OM.csv", "results/LAC_BASE_VS_GREEDY.csv",
          "results/LAC_EVAL_VS_GREEDY.csv", "results/DC_BASELINE_VS_GREEDY.csv",
-         "results/DC_IR_VS_GREEDY.csv", "results/DC_IC_2.csv", "results/DC_IR_2.csv"
+         "results/DC_IR_VS_GREEDY.csv", "results/DC_IC_2.csv", "results/DC_IR_2.csv",
+         "results/LAC_IR_2.csv", "results/DPC_IR_2.csv", "results/DPC_IC_2.csv",
         ]
     
 def main():
@@ -52,8 +50,17 @@ def main():
     for i, line in enumerate(csv):
         if i == 0 or line == "":
             continue
+        print(i)
         fields = line.replace("\n", "").split(",")
         player1, player2, result, settings1, settings2, moves, no_rollouts, no_beliefs = fields
+        no_rollouts = no_rollouts[1:]
+        roll = no_rollouts.replace("[", "").replace("]", "").split(" ")
+        player1_rolls = player2_rolls = []
+        for i, ro in enumerate(roll):
+            if i%2==0:
+                player1_rolls.append(int(ro))
+            else:
+                player2_rolls.append(int(ro))
         white = [0,0,0]
         black = [0,0,0]
         if int(result) == 1:
@@ -66,12 +73,6 @@ def main():
             white = [0,1,0]
             black = [0,1,0]
 
-        # rollout_per_second = []
-        # for i, no in enumerate(no_rollouts):
-        #     if i%2==1:
-        #         continue
-        #     rollout_per_second.append(no)
-
         if result_dict.get(settings1):
             result_dict[settings1] = ([
                 result_dict[settings1][0][0]+white[0], 
@@ -79,16 +80,10 @@ def main():
                 result_dict[settings1][0][2]+white[2]
                 ],
                 result_dict[settings1][1],
-                #rollout_per_second
-                )
+                result_dict[settings1][2] + player1_rolls
+            )
         else:
-            result_dict[settings1] = (white,[0,0,0])
-        
-        # rollout_per_second = []
-        # for i, no in enumerate(no_rollouts):
-        #     if i%2==0:
-        #         continue
-        #     rollout_per_second.append(no)
+            result_dict[settings1] = (white,[0,0,0],player1_rolls)
         if result_dict.get(settings2):
             result_dict[settings2] = (
                 result_dict[settings2][0],
@@ -97,10 +92,10 @@ def main():
                     result_dict[settings2][1][1]+black[1],
                     result_dict[settings2][1][2]+black[2],
                 ],
-                #rollout_per_second
+                result_dict[settings2][2] + player2_rolls
                 )
         else:
-            result_dict[settings2] = ([0,0,0],black)
+            result_dict[settings2] = ([0,0,0],black,player2_rolls)
     # print(result_dict)
     # print_heatmap(result_dict)
 
@@ -174,7 +169,7 @@ def print_hybrids(result_dict: dict[list]):
             "DPC_GREEDY",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Greedy",
-            "Wahrscheinlichkeit für beste Zugwahl"
+            "Wahrscheinlichkeit für zufällige Zugwahl"
         ),
         (
             "DPC_EPT",
@@ -249,7 +244,7 @@ def print_hybrids(result_dict: dict[list]):
             "c"
         ),
         (
-            "DPC_IC",
+            "DPC_IC_2",
             [
                 r'\"Early_playout_termination\":\{\"Max_depth\":([0-9]+(?:\.[0-9]+)?)',
                 r'\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
@@ -258,7 +253,7 @@ def print_hybrids(result_dict: dict[list]):
             ["Minimax-Suchtiefe", "Rollout-Tiefe"]
         ),
         (
-            "DPC_IR",
+            "DPC_IR_2",
             [
                 r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
                 r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
@@ -294,7 +289,7 @@ def print_hybrids(result_dict: dict[list]):
             "DC_GREEDY_2",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Greedy",
-            "Wahrscheinlichkeit für beste Zugwahl"
+            "Wahrscheinlichkeit für zufällige Zugwahl"
         ),
         (
             "DC_CORRECTIVE_2",
@@ -350,15 +345,13 @@ def print_hybrids(result_dict: dict[list]):
             "Vielversprechende Abbrüche",
             "Rollout-Tiefe"
         ),
-        # (
-        #     "DC_K_BEST",
-        #     [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
-        #     "K-Beste",
-        #     "Anzahl berücksichtigter Züge"
-        # ),
         (
-<<<<<<< HEAD
-=======
+            "DC_K_BEST",
+            [r'\"Rollout_selection\":\{"K":([0-9]+(?:\.[0-9]+)?)'],
+            "K-Beste",
+            "Anzahl berücksichtigter Züge"
+        ),
+        (
             "DC_IR",
             [
                 r'"Search_depth":\s*\d+.*?"Epsilon":\s*([\d.]+)',
@@ -372,7 +365,7 @@ def print_hybrids(result_dict: dict[list]):
                 r'"Search_depth":\s*\d+.*?"Epsilon":\s*([\d.]+)',
             ],
             "Vielversprechender-Rollout",
-            "Abbruchschwellwert"
+            "Wahrscheinlichkeit für Minimax-Suche"
         ),
         (
             "DC_IC",
@@ -383,11 +376,10 @@ def print_hybrids(result_dict: dict[list]):
             "Abbruchtiefe"
         ),
         (
->>>>>>> 5a892c5 (data sava.)
             "LAC_GREEDY",
             [r'\"Rollout_selection\":\{\"Epsilon\":([0-9]+(?:\.[0-9]+)?)'],
             "Greedy",
-            "Wahrscheinlichkeit für beste Zugwahl"
+            "Wahrscheinlichkeit für zufällige Zugwahl"
         ),
         (
             "LAC_EPT",
@@ -445,10 +437,19 @@ def print_hybrids(result_dict: dict[list]):
                 r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
              ],
             "Vielversprechende Rollouts",
-            ["Wahrschinlichkeit für Minimax-Suche", "Minimax-Suchtiefe"]
+            ["Wahrscheinlichkeit für Minimax-Suche", "Minimax-Suchtiefe"]
+        ),
+        (
+            "LAC_IR_2",
+            [
+                r'\"Rollout_selection\":\{\"Search_depth\":([0-9]+(?:\.[0-9]+)?)',
+                r'\"Search_depth\":[0-9]+ \"Epsilon\":([0-9]+(?:\.[0-9]+)?)',
+             ],
+            "Vielversprechende Rollouts",
+            ["Wahrscheinlichkeit für Minimax-Suche", "Minimax-Suchtiefe"]
         ),
     ]
-
+    
     for name, reg, title, x_axis_label in diagrams:
         x = []
         y = []
@@ -476,7 +477,7 @@ def print_hybrids(result_dict: dict[list]):
                 ci_high_pct = 100 * ci.high
                 lower_err = win_percentage - ci_low_pct
                 upper_err = ci_high_pct - win_percentage
-                print(name, ucb_c, win_percentage, value)
+                print(name, ucb_c, win_percentage, statistics.median(value[2]))
                 x.append(ucb_c)
                 y.append(win_percentage)
                 e_low.append(lower_err)
@@ -497,13 +498,13 @@ def print_hybrids(result_dict: dict[list]):
         ax.set_yticks(np.arange(0, 101, 10))
         fig.tight_layout()
         plt.rcParams.update({
-            'font.size': 10,          # Basisgröße (entspricht etwa 10pt/11pt in LaTeX)
+            'font.size': 10,        
             'axes.titlesize': 10,
             'axes.labelsize': 9,
             'xtick.labelsize': 8,
             'ytick.labelsize': 8,
             'legend.fontsize': 8,
-            'figure.figsize': (3.51, 2.5) # WICHTIG: Kleine Fläche erzwingt große Schrift
+            'figure.figsize': (3.51, 2.5)
         })
         plt.savefig(f"{name}.pdf", format="pdf", bbox_inches="tight")
         plt.close()
@@ -523,7 +524,7 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
             win_percentage = 100 * player_wins / player_games
             res = binomtest(player_wins, player_games)
             ci = res.proportion_ci(1 - 0.05, method="wilson")
-            print(name, param1, param2, win_percentage, value)
+            print(name, param1, param2, win_percentage, statistics.median(value[2]))
             if not x.get(param1):
                 x[param1] = []
                 y[param1] = []
@@ -542,7 +543,7 @@ def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_a
     n_groups = len(groups)
     # dpc ir = 0.04 dpc ic = 0.15
     # lac ir = 0.012
-    width = 0.25  # total horizontal spread
+    width = 0.012  # total horizontal spread
     offsets = np.linspace(-width, width, n_groups)
     for offset, param1 in zip(offsets, groups):
         #x_label, y, e_low, e_high = zip(*sorted(zip(x, y, e_low, e_high)))
