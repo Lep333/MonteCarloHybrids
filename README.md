@@ -3,7 +3,7 @@ Dieses Projekt testet Monte Carlo Tree Search Hybride
 in Spielen mit partiellen Informationen. Dafür wurden 
 die Spiele Dark Pawn Chess (5x5), Dark Los Alamos Chess 
 (6x6) und Dark Chess (8x8) implementiert. Diese Spiele
-befinden sich in /chess_variation und implementieren
+befinden sich in src/chess_variation und implementieren
 die Schnittstelle ChessVariation. 
 ChessVariation bietet folgende Funktionen:
 - GetPossibleMoves(): mögliche Züge der aktuellen Spielerin
@@ -11,7 +11,7 @@ ChessVariation bietet folgende Funktionen:
 - ExecuteMove(move): führt den mitgegebenen move auf dem Spielbrett 
 - GameOver(): überprüft ob das Spielende erreicht wurde
 
-In /player befindet sich POMCP und die Hybride.
+In src/player befindet sich POMCP und die Hybride.
 POMCP befindet sich in der Datei: pomcp.go, die Hybride befinden sich in selection.go.
 
 In main.go können folgende Einstellungen getroffen
@@ -44,8 +44,8 @@ Dabei muss die aktive Directory /src sein!
 ## English
 This is a project that researches the usecase of
 MCTS in games with partial informations. The different
-games are implemented in /chess_variation. The player
-models are in /players.
+games are implemented in src/chess_variation. The player
+models are in src/players.
 
 ## Run it
 To run different chess simulations do the following.
