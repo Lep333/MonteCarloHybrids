@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib
 import matplotlib as mpl
 from scipy.stats import binomtest
+import pandas as pd
 
 csv = []
 files = [
@@ -270,7 +271,7 @@ def print_hybrids(result_dict: dict[list]):
         (
             "LAC_OM",
             [r'\"OM_Threshold\":([0-9]+(?:\.[0-9]+)?)'],
-            "POMCP Gewinnrate mit verschiedenen UCB Konstante c Werten",
+            "POMCP Gewinnrate mit verschiedenen Gegnermodellierungen",
             "c"
         ),
         (
@@ -364,7 +365,7 @@ def print_hybrids(result_dict: dict[list]):
             [
                 r'"Search_depth":\s*\d+.*?"Epsilon":\s*([\d.]+)',
             ],
-            "Vielversprechender-Rollout",
+            "Vielversprechender Rollout",
             "Wahrscheinlichkeit für Minimax-Suche"
         ),
         (
@@ -449,8 +450,14 @@ def print_hybrids(result_dict: dict[list]):
             ["Wahrscheinlichkeit für Minimax-Suche", "Minimax-Suchtiefe"]
         ),
     ]
-    
+    # table header
+    # param1, w-w, r, w-b, median_rollouts
     for name, reg, title, x_axis_label in diagrams:
+        ww = []
+        r = []
+        bw = []
+        rollouts = []
+        param = []
         x = []
         y = []
         e_low = []
@@ -477,7 +484,13 @@ def print_hybrids(result_dict: dict[list]):
                 ci_high_pct = 100 * ci.high
                 lower_err = win_percentage - ci_low_pct
                 upper_err = ci_high_pct - win_percentage
-                print(name, ucb_c, win_percentage, statistics.median(value[2]))
+                ww.append(value[0][0])
+                bw.append(value[1][0])
+                r.append(value[0][1]+value[1][1])
+                param.append(ucb_c)
+                medi = statistics.median(value[2])
+                rollouts.append(medi)
+                print(name, ucb_c, win_percentage, medi)
                 x.append(ucb_c)
                 y.append(win_percentage)
                 e_low.append(lower_err)
@@ -508,7 +521,23 @@ def print_hybrids(result_dict: dict[list]):
         })
         plt.savefig(f"{name}.pdf", format="pdf", bbox_inches="tight")
         plt.close()
-
+        data = pd.DataFrame({
+                x_axis_label: param,
+                "W-W": ww,
+                "R": r,
+                "B-W": bw,
+                r"Rollout\textbackslash s": rollouts
+        })
+        latex_table = data.to_latex(
+            index=False,
+            caption=title, # Dein Titel
+            float_format="%.2f",
+            label="tab:mcts_ergebnisse", # Für Querverweise im Text (\ref{tab:mcts_ergebnisse})
+            position="ht",               # Platzierung in LaTeX (here, top)
+            column_format="lrrrr",         # Ausrichtung der Spalten   
+        )
+        with open("appendix.txt", "a") as f:
+            f.write(latex_table)
 def two_parameters(result_dict: dict, name: str, reg: list[str], title: str, x_axis_label: str):
     x = {}
     y = {}

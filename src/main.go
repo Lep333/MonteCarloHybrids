@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var name = "DC_IC_VS_GREEDY"
+var name = "DC_IC_2"
 
 func main() {
 	// web_server()
@@ -29,31 +29,36 @@ func main() {
 		Opponent_modelling:        true,
 		OM_Threshold:              0.2,
 	}
-	// default_settings := player.Settings{
-	// 	Termination_parameter: 1000,
-	// 	Gamma:                 0.95,
-	// 	Epsilon:               0.05,
-	// 	Ucb_c:                 0.1,
-	// 	Rollout_capture:       0,
-	// 	Opponent_modelling:    true,
-	// 	OM_Threshold:          0.2,
-	// }
+	default_settings := player.Settings{
+		Termination_parameter: 1000,
+		Gamma:                 0.95,
+		Epsilon:               0.05,
+		Ucb_c:                 0.1,
+		Rollout_capture:       0,
+		Opponent_modelling:    true,
+		OM_Threshold:          0.2,
+	}
 	greedy_wins := 0
 	pomcp_wins := 0
-	threshs := []float64{6}
+	threshs := []float64{40}
 	for _, thresh := range threshs {
 		tune_settings.Early_playout_termination = &player.MCTS_with_informed_cutoffs{
 			Max_depth:    thresh,
-			Search_depth: 2,
+			Search_depth: 1,
 		}
-		player1 = &player.Greedy{}
+		player1 = &player.POMCP{
+			Root:            nil,
+			Started_playing: false,
+			Last_move:       chess_variation.Move{},
+			Settings:        default_settings,
+		}
 		player2 = &player.POMCP{
 			Root:            nil,
 			Started_playing: false,
 			Last_move:       chess_variation.Move{},
 			Settings:        tune_settings,
 		}
-		iterations := 25
+		iterations := 100
 		for i := 0; i < iterations; i++ {
 			game := chess_variation.DarkChess{}
 			if i == int(iterations/2) {
