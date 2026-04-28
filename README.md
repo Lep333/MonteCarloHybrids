@@ -1,6 +1,6 @@
 # Monte Carlo Tree Search-Hybrids
 Dieses Projekt testet Monte Carlo Tree Search Hybride
-in Spielen mit partiellen Informationen. Dafür wurden 
+in Spielen mit partiellen Informationen (siehe Abschlussarbeit.pdf). Dafür wurden 
 die Spiele Dark Pawn Chess (5x5), Dark Los Alamos Chess 
 (6x6) und Dark Chess (8x8) implementiert. Diese Spiele
 befinden sich in src/chess_variation und implementieren
